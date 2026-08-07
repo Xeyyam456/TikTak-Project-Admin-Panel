@@ -1,0 +1,91 @@
+.hero {
+  margin-bottom: 20px;
+  padding: 16px;
+  border-radius: var(--radius-md);
+  background: var(--color-white);
+  border: 1px solid var(--color-border);
+  box-shadow: var(--shadow-sm);
+}
+
+.detailAvatar {
+  height: 56px;
+  width: 56px;
+  flex-shrink: 0;
+  border-radius: 999px;
+  font-size: 18px;
+  font-weight: 600;
+  /* Literal white, not var(--color-white) — text on a solid colored avatar
+     circle (background is dynamic, from user.color), not a surface. */
+  color: #ffffff;
+  background: #22c55e;
+  box-shadow: 0 0 0 3px var(--color-border);
+}
+
+.detailName {
+  margin-bottom: 4px;
+  font-weight: 600;
+  font-size: 17px;
+  color: var(--color-text-strong);
+}
+
+.roleBadge {
+  border-radius: var(--radius-sm);
+  border: 1px solid #cdebc7;
+  background: var(--color-white);
+  padding: 4px 10px;
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--color-green-dark);
+}
+
+.detailList {
+  margin: 0;
+}
+
+.detailRow {
+  border-radius: var(--radius-md);
+  background: var(--color-white);
+  border: 1px solid var(--color-border);
+  box-shadow: var(--shadow-sm);
+  padding: 12px 14px;
+}
+
+.detailIcon {
+  height: 30px;
+  width: 30px;
+  flex-shrink: 0;
+  border-radius: 999px;
+}
+
+.iconBlue {
+  background: var(--color-blue-bg);
+  color: var(--color-blue-text);
+}
+
+.iconAmber {
+  background: var(--color-amber-bg);
+  color: var(--color-amber-text);
+}
+
+.iconPurple {
+  background: var(--color-purple-bg);
+  color: var(--color-purple-text);
+}
+
+.iconGreen {
+  background: var(--color-green-bg);
+  color: var(--color-green-dark);
+}
+
+.detailLabel {
+  margin-bottom: 2px;
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--color-text-faint);
+}
+
+.detailValue {
+  font-size: 14px;
+  overflow-wrap: break-word;
+  color: var(--color-text);
+}

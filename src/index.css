@@ -1,0 +1,141 @@
+@import "tailwindcss";
+
+/* Azerbaijani only needs latin + latin-ext (ə/ğ/ı/ö/ş/ü/ç) — not the full
+   cyrillic/greek/vietnamese/symbols/math subsets fontsource ships by default */
+@import "@fontsource/roboto/latin-300.css";
+@import "@fontsource/roboto/latin-ext-300.css";
+@import "@fontsource/roboto/latin-400.css";
+@import "@fontsource/roboto/latin-ext-400.css";
+@import "@fontsource/roboto/latin-500.css";
+@import "@fontsource/roboto/latin-ext-500.css";
+@import "@fontsource/roboto/latin-700.css";
+@import "@fontsource/roboto/latin-ext-700.css";
+
+* {
+  box-sizing: border-box;
+}
+
+h1,
+h2,
+h3,
+h4,
+h5,
+h6,
+p,
+dl,
+dd {
+  margin: 0;
+}
+
+:root {
+  font: 14px/1.45 "Roboto", system-ui, sans-serif;
+  color-scheme: light;
+
+  --color-green: #7cc576;
+  --color-green-dark: #6bb565;
+  --color-green-bg: #eef8ec;
+
+  --color-page-bg: #f4f4f9;
+  --color-white: #ffffff;
+  --color-subtle-bg: #f9fafb;
+
+  --color-text: #374151;
+  --color-text-strong: #1f2937;
+  --color-text-muted: #6b7280;
+  --color-text-faint: #9ca3af;
+
+  --color-border: #f3f4f6;
+  --color-border-strong: #e5e7eb;
+
+  --color-amber-bg: #fffbeb;
+  --color-amber-text: #d97706;
+  --color-amber-border: #fde68a;
+
+  --color-blue-bg: #eff6ff;
+  --color-blue-text: #2563eb;
+  --color-blue-border: #bfdbfe;
+
+  --color-red-bg: #fef2f2;
+  --color-red-text: #ef4444;
+  --color-red-border: #fecaca;
+
+  --color-purple-bg: #faf5ff;
+  --color-purple-text: #9333ea;
+  --color-purple-border: #e9d5ff;
+
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.04);
+  --shadow-md: 0 10px 25px rgba(0, 0, 0, 0.15);
+  --radius-lg: 16px;
+  --radius-md: 10px;
+  --radius-sm: 8px;
+
+  --shell-padding-x: 16px;
+  --table-row-height: 60px;
+  --page-title-height: 37px;
+}
+
+@media (min-width: 640px) {
+  :root {
+    --shell-padding-x: 60px;
+  }
+}
+
+/* `--color-white` keeps its name but means "card/surface background" in every
+   component that uses it (Modal, Table, .main, etc.) — reassigning it to a
+   dark surface color here is what lets every existing component go dark
+   without touching a single component file. Badge "-bg" tokens switch from
+   solid pale fills to translucent tints of their own text color, since a flat
+   pale color (e.g. amber-50) would look like a light-mode leftover on a dark
+   page — a tint of the accent itself reads correctly on any dark surface. */
+:root[data-theme="dark"] {
+  color-scheme: dark;
+
+  --color-green: #7cc576;
+  --color-green-dark: #93d78d;
+  --color-green-bg: rgba(124, 197, 118, 0.16);
+
+  --color-page-bg: #15171c;
+  --color-white: #1e2128;
+  --color-subtle-bg: #252830;
+
+  --color-text: #d1d5db;
+  --color-text-strong: #f3f4f6;
+  --color-text-muted: #9ca3af;
+  --color-text-faint: #71767f;
+
+  --color-border: #2a2d34;
+  --color-border-strong: #3a3e46;
+
+  --color-amber-bg: rgba(251, 191, 36, 0.14);
+  --color-amber-text: #fbbf24;
+  --color-amber-border: rgba(251, 191, 36, 0.35);
+
+  --color-blue-bg: rgba(96, 165, 250, 0.14);
+  --color-blue-text: #60a5fa;
+  --color-blue-border: rgba(96, 165, 250, 0.35);
+
+  --color-red-bg: rgba(248, 113, 113, 0.14);
+  --color-red-text: #f87171;
+  --color-red-border: rgba(248, 113, 113, 0.35);
+
+  --color-purple-bg: rgba(192, 132, 252, 0.14);
+  --color-purple-text: #c084fc;
+  --color-purple-border: rgba(192, 132, 252, 0.35);
+
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.4);
+  --shadow-md: 0 10px 25px rgba(0, 0, 0, 0.55);
+}
+
+body {
+  margin: 0;
+  background: var(--color-page-bg);
+  font-family: "Roboto", system-ui, sans-serif;
+  transition: background-color 0.2s ease;
+}
+
+button,
+input,
+select,
+textarea {
+  font-family: inherit;
+}

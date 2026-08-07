@@ -1,0 +1,8 @@
+.titleCell {
+  font-weight: 500;
+  color: var(--color-text);
+}
+
+.descCell {
+  color: var(--color-text-muted);
+}

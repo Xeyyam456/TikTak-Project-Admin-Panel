@@ -1,0 +1,16 @@
+.nameCell {
+  font-weight: 500;
+  color: var(--color-text);
+}
+
+.descCell {
+  color: var(--color-text-muted);
+}
+
+.priceCell {
+  font-weight: 500;
+}
+
+.categoryCell {
+  color: var(--color-text-muted);
+}

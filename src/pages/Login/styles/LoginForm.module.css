@@ -1,0 +1,17 @@
+.submitBtn {
+  margin-top: 8px;
+  border-radius: var(--radius-sm);
+  border: none;
+  background: var(--color-green);
+  padding: 15px;
+  font-size: 15px;
+  font-weight: 500;
+  /* Literal white, not var(--color-white) — see Button.module.css's .solid
+     for why: text on a solid green button, not a surface. */
+  color: #ffffff;
+  transition: background 0.15s;
+}
+
+.submitBtn:hover {
+  background: var(--color-green-dark);
+}

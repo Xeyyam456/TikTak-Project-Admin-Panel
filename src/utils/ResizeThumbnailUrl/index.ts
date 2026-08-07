@@ -1,0 +1,1 @@
+export { resizeThumbnailUrl } from './resizeThumbnailUrl'

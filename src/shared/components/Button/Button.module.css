@@ -1,0 +1,62 @@
+.btn {
+  border-radius: var(--radius-sm);
+  border: 1px solid transparent;
+  padding: 9px 16px;
+  font-size: 14px;
+  font-weight: 500;
+  font-family: inherit;
+  transition: background 0.15s, color 0.15s, border-color 0.15s;
+}
+
+.solid {
+  background: var(--color-green);
+  /* Literal white, not var(--color-white) — that token means "card/surface
+     background" (see index.css's dark-mode block), which is dark in dark
+     mode. This is text on a solid green button, not a surface, so it needs
+     to stay white in both themes. */
+  color: #ffffff;
+}
+
+.solid:hover {
+  background: var(--color-green-dark);
+}
+
+.outline {
+  background: var(--color-white);
+  border-color: var(--color-border-strong);
+  color: var(--color-text-muted);
+}
+
+.outline:hover {
+  background: var(--color-subtle-bg);
+}
+
+.ghost {
+  background: none;
+  border-color: transparent;
+  padding: 0;
+  color: var(--color-text-muted);
+}
+
+.ghost:hover {
+  color: var(--color-green);
+}
+
+.ghostDanger {
+  background: none;
+  border-color: transparent;
+  padding: 0;
+  color: #f87171;
+}
+
+.ghostDanger:hover {
+  color: var(--color-red-text);
+}
+
+.fullWidth {
+  width: 100%;
+}
+
+.block {
+  flex: 1;
+}

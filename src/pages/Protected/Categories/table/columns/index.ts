@@ -1,0 +1,1 @@
+export { categoryColumns } from './columns'

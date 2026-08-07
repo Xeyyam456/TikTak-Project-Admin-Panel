@@ -1,0 +1,107 @@
+.header {
+  display: grid;
+  grid-template-columns: 1fr minmax(240px, 470px) 1fr;
+  align-items: center;
+}
+
+.title {
+  justify-self: start;
+  font-size: 20px;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  color: var(--color-text-strong);
+}
+
+.searchWrap {
+  position: relative;
+  justify-self: center;
+  width: 100%;
+  max-width: 470px;
+}
+
+.searchIcon {
+  position: absolute;
+  left: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: var(--color-text-faint);
+}
+
+.searchInput {
+  width: 100%;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--color-border);
+  background: var(--color-subtle-bg);
+  padding: 8px 12px 8px 36px;
+  font-size: 14px;
+  color: var(--color-text);
+  outline: none;
+}
+
+.searchInput:focus {
+  border-color: var(--color-green);
+}
+
+.spacer {
+  justify-self: end;
+}
+
+.themeToggle {
+  position: relative;
+  height: 28px;
+  width: 52px;
+  flex-shrink: 0;
+  border-radius: 999px;
+  border: 1px solid var(--color-border-strong);
+  background: var(--color-border);
+  padding: 0;
+  transition: background-color 0.2s ease, border-color 0.2s ease;
+}
+
+.themeToggleDark {
+  background: #2a2d34;
+  border-color: #3a3e46;
+}
+
+.trackIconSun,
+.trackIconMoon {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  color: var(--color-text-faint);
+  transition: color 0.2s ease;
+}
+
+.trackIconSun {
+  left: 7px;
+}
+
+.trackIconMoon {
+  right: 7px;
+}
+
+.themeToggleDark .trackIconMoon {
+  color: var(--color-blue-text);
+}
+
+.themeToggle:not(.themeToggleDark) .trackIconSun {
+  color: var(--color-amber-text);
+}
+
+.themeToggleThumb {
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  height: 22px;
+  width: 22px;
+  border-radius: 999px;
+  background: var(--color-white);
+  color: var(--color-amber-text);
+  box-shadow: var(--shadow-sm);
+  transition: transform 0.25s cubic-bezier(0.4, 0, 0.2, 1), color 0.2s ease;
+}
+
+.themeToggleDark .themeToggleThumb {
+  transform: translateX(24px);
+  color: var(--color-blue-text);
+}

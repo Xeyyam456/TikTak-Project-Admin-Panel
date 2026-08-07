@@ -1,0 +1,35 @@
+.page {
+  min-height: 100vh;
+  padding: 24px;
+  background: var(--color-white);
+}
+
+.badge {
+  height: 72px;
+  width: 72px;
+  margin-bottom: 8px;
+  border-radius: 999px;
+  background: var(--color-green-bg);
+  color: var(--color-green-dark);
+}
+
+.code {
+  font-size: 72px;
+  font-weight: 800;
+  line-height: 1;
+  letter-spacing: -0.03em;
+  color: var(--color-green);
+}
+
+.title {
+  font-size: 22px;
+  font-weight: 700;
+  color: var(--color-text-strong);
+}
+
+.text {
+  max-width: 360px;
+  margin-bottom: 8px;
+  font-size: 14px;
+  color: var(--color-text-muted);
+}

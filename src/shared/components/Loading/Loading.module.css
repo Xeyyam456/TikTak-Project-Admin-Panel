@@ -1,0 +1,110 @@
+.wrap {
+  margin-bottom: 16px;
+  padding: 32px 0;
+  font-size: 15px;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  color: var(--color-text-muted);
+  animation: fadeIn 0.25s ease;
+}
+
+/* Route-level Suspense fallback: pinned to the viewport (not just a tall box in
+   the page flow) so it's always truly screen-centered regardless of whatever
+   layout/scroll state surrounds it, plus noticeably bigger bars since it's the
+   only thing on screen at that point. */
+.fullScreen {
+  position: fixed;
+  inset: 0;
+  margin-bottom: 0;
+  background: var(--color-page-bg);
+  z-index: 50;
+}
+
+.fullScreen .bars {
+  --bar-width: 28px;
+  --bar-gap: 24px;
+  --bar-min: 48px;
+  --bar-max: 192px;
+}
+
+.fullScreen .text {
+  font-size: 18px;
+}
+
+.bars {
+  --bar-width: 20px;
+  --bar-gap: 16px;
+  --bar-min: 32px;
+  --bar-max: 128px;
+  gap: var(--bar-gap);
+  height: var(--bar-max);
+}
+
+.bar {
+  width: var(--bar-width);
+  border-radius: 6px;
+  height: var(--bar-min);
+  animation: eq 1s ease-in-out infinite;
+}
+
+/* Same equalizer keyframe on every bar, staggered by animation-delay so the
+   heights ripple across the row instead of all bars pumping in unison. */
+.bar:nth-child(1) {
+  background: var(--color-green);
+  animation-delay: 0s;
+}
+
+.bar:nth-child(2) {
+  background: var(--color-blue-text);
+  animation-delay: 0.1s;
+}
+
+.bar:nth-child(3) {
+  background: var(--color-purple-text);
+  animation-delay: 0.2s;
+}
+
+.bar:nth-child(4) {
+  background: var(--color-amber-text);
+  animation-delay: 0.3s;
+}
+
+.bar:nth-child(5) {
+  background: var(--color-green);
+  animation-delay: 0.4s;
+}
+
+.text {
+  animation: breathe 1.6s ease-in-out infinite;
+}
+
+@keyframes eq {
+  0%,
+  100% {
+    height: var(--bar-min);
+  }
+  50% {
+    height: var(--bar-max);
+  }
+}
+
+@keyframes breathe {
+  0%,
+  100% {
+    opacity: 0.5;
+  }
+  50% {
+    opacity: 1;
+  }
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(-2px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
