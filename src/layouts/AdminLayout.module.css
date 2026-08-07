@@ -1,0 +1,75 @@
+/* height: 100vh, not min-height — this is what stops the whole page from
+   ever growing taller than the real viewport (no page-level/body scroll)
+   on any device. See `.main` below for how its own height is derived
+   without reintroducing the bug a naive fixed height caused here before. */
+.page {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  background: var(--color-page-bg);
+}
+
+.headerBar {
+  flex-shrink: 0;
+  border-bottom: 1px solid var(--color-border);
+  background: var(--color-white);
+  padding: 16px var(--shell-padding-x);
+}
+
+.headerInner {
+  margin: 0 auto;
+}
+
+.bodyBar {
+  flex: 1;
+  min-height: 0;
+  padding: 24px var(--shell-padding-x);
+}
+
+.bodyInner {
+  height: 100%;
+  margin: 0 auto;
+}
+
+/* max-height (not height, not a vh unit) — `vh` was tried on request
+   (`.bodyBar { height: 90vh }`) and reverted: `vh` is *defined* to scale
+   with the device's actual viewport height, so by construction it produced
+   a different absolute pixel height on every device class tested (real
+   screenshots: a visible empty gap above `Pagination` on one device, only
+   4 of 7 rows visible with the rest clipped on a taller one) — the opposite
+   of the actual goal, which is the *same* look on every device. A fixed
+   `max-height` in px, layered on top of `flex: 1`, is what actually achieves
+   that: `flex: 1` still lets `.main` shrink on a short viewport (avoiding
+   the earlier page-level-scroll bug a fixed *height* caused there), but the
+   cap stops it from growing past a fixed ceiling on every taller device —
+   the same 700px regardless of whether that device happens to have 20% or
+   200% more viewport height to spare (tuned from an initial 646px to 700px
+   on request — a shorter ~768px-tall viewport won't actually reach 700px,
+   `flex: 1` just shrinks it below the cap there same as any other short
+   viewport, so this is a ceiling for tall screens, not a guarantee for
+   every screen). Any viewport too short even for that shrinks the table's
+   own internal scroll instead (invisible scrollbar, still functional) —
+   that's the one case that can't be avoided without literally clipping
+   content, and is preferable to either of the two vh failure modes above. */
+.main {
+  min-width: 0;
+  flex: 1;
+  min-height: 0;
+  max-height: 700px;
+  border-radius: var(--radius-lg);
+  background: var(--color-white);
+  padding: 24px;
+  box-shadow: var(--shadow-sm);
+}
+
+/* Outlet always renders a single page-root <div> here. min-height: 0 is
+   required so the flex child can shrink below its content size and let
+   `Table`'s .scroll wrapper (flex: 1 in Table.module.css) take the overflow
+   instead of pushing `.main` (and the whole page) taller. */
+.main > * {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  min-width: 0;
+  min-height: 0;
+}

@@ -1,0 +1,259 @@
+.wideModal {
+  max-width: 660px;
+}
+
+.hero {
+  margin-bottom: 20px;
+  padding: 16px;
+  border-radius: var(--radius-md);
+  background: linear-gradient(135deg, var(--color-green-bg) 0%, var(--color-white) 65%);
+  border: 1px solid var(--color-border);
+  border-left: 4px solid var(--color-green);
+  box-shadow: var(--shadow-sm);
+}
+
+.statusDot {
+  height: 32px;
+  width: 32px;
+  border-radius: 999px;
+  background: var(--color-green);
+  font-size: 14px;
+  font-weight: 600;
+  /* Literal white, not var(--color-white) — see Button.module.css's .solid
+     for why: text on a solid green circle, not a surface. */
+  color: #ffffff;
+}
+
+.orderCode {
+  font-weight: 600;
+  font-size: 17px;
+  color: var(--color-text-strong);
+}
+
+.miniLabel {
+  font-size: 12px;
+  color: var(--color-text-faint);
+}
+
+.statusSelect {
+  border-radius: var(--radius-sm);
+  border: 1px solid currentColor;
+  padding: 4px 8px;
+  font-size: 14px;
+  color: var(--color-text);
+  outline: none;
+}
+
+/* Explicit background + color on <option> (not just relying on the
+   <select>'s own color-scheme/inherited color) — native <option> popups are
+   OS-rendered chrome that doesn't reliably pick up dark styling from an
+   ancestor's color-scheme alone across browsers, so without this the open
+   dropdown list stayed light-themed (white background, low-contrast text)
+   even with :root[data-theme="dark"] active. */
+.statusOption {
+  background: var(--color-white);
+  color: var(--color-text);
+}
+
+.amountText {
+  font-weight: 600;
+  color: var(--color-red-text);
+}
+
+.detailList {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin: 0 0 20px;
+}
+
+.infoGrid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+}
+
+@media (max-width: 520px) {
+  .infoGrid {
+    grid-template-columns: 1fr;
+  }
+}
+
+.detailRow {
+  min-width: 0;
+  border-radius: var(--radius-md);
+  background: var(--color-white);
+  border: 1px solid var(--color-border);
+  border-left: 3px solid transparent;
+  box-shadow: var(--shadow-sm);
+  padding: 12px 14px;
+  transition: transform 0.15s, box-shadow 0.15s;
+}
+
+.detailRow:hover {
+  box-shadow: var(--shadow-md);
+  transform: translateY(-1px);
+}
+
+.detailIcon {
+  height: 30px;
+  width: 30px;
+  flex-shrink: 0;
+  border-radius: 999px;
+}
+
+/* `OrderInfoRow`'s `color` prop lands on `.detailRow` as a plain `data-color`
+   attribute (not a CSS-Modules class) — the row's left-accent color and its
+   icon's background/color both key off it here, so the component itself
+   holds no color-to-classname lookup map at all. */
+.detailRow[data-color='blue'] {
+  border-left-color: var(--color-blue-text);
+}
+
+.detailRow[data-color='blue'] .detailIcon {
+  background: var(--color-blue-bg);
+  color: var(--color-blue-text);
+}
+
+.detailRow[data-color='amber'] {
+  border-left-color: var(--color-amber-text);
+}
+
+.detailRow[data-color='amber'] .detailIcon {
+  background: var(--color-amber-bg);
+  color: var(--color-amber-text);
+}
+
+.detailRow[data-color='purple'] {
+  border-left-color: var(--color-purple-text);
+}
+
+.detailRow[data-color='purple'] .detailIcon {
+  background: var(--color-purple-bg);
+  color: var(--color-purple-text);
+}
+
+.detailRow[data-color='green'] {
+  border-left-color: var(--color-green-dark);
+}
+
+.detailRow[data-color='green'] .detailIcon {
+  background: var(--color-green-bg);
+  color: var(--color-green-dark);
+}
+
+.detailLabel {
+  margin-bottom: 2px;
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--color-text-faint);
+}
+
+.detailValue {
+  font-size: 14px;
+  overflow-wrap: break-word;
+  color: var(--color-text);
+}
+
+.productsSection {
+  margin-bottom: 4px;
+}
+
+.detailSectionTitle {
+  margin: 0 0 12px;
+  font-weight: 600;
+  color: var(--color-text-strong);
+}
+
+.productsCard {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.productRow {
+  border-radius: var(--radius-md);
+  background: var(--color-subtle-bg);
+  border: 1px solid transparent;
+  border-left: 3px solid var(--color-green);
+  padding: 10px 12px;
+  transition: background 0.15s, border-color 0.15s, box-shadow 0.15s, transform 0.15s;
+}
+
+.productRow:nth-child(3n+2) {
+  border-left-color: var(--color-blue-text);
+}
+
+.productRow:nth-child(3n+3) {
+  border-left-color: var(--color-purple-text);
+}
+
+.productRow:hover {
+  background: var(--color-white);
+  /* top/right/bottom only — border-left keeps its accent color (set above by
+     the base rule + the nth-child overrides), a shorthand `border-color` here
+     would reset all four sides including the accent one. */
+  border-top-color: var(--color-border);
+  border-right-color: var(--color-border);
+  border-bottom-color: var(--color-border);
+  box-shadow: var(--shadow-sm);
+  transform: translateY(-1px) translateX(2px);
+}
+
+.productIndex {
+  height: 22px;
+  width: 22px;
+  flex-shrink: 0;
+  border-radius: 999px;
+  background: var(--color-green-bg);
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--color-green-dark);
+}
+
+.productName {
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--color-text);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.productMeta {
+  font-size: 12px;
+  color: var(--color-text-faint);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.productPriceWrap {
+  flex-shrink: 0;
+}
+
+.pricePill {
+  display: inline-flex;
+  border-radius: 999px;
+  background: var(--color-green-bg);
+  padding: 3px 10px;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--color-green-dark);
+}
+
+.productUnit {
+  font-size: 11px;
+  color: var(--color-text-faint);
+}
+
+.shippingNote {
+  margin-top: 12px;
+  display: inline-flex;
+  border-radius: 999px;
+  background: var(--color-subtle-bg);
+  padding: 6px 12px;
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--color-text-muted);
+}

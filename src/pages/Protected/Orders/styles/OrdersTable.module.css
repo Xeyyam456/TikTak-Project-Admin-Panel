@@ -1,0 +1,293 @@
+.colLabel {
+  white-space: nowrap;
+}
+
+/* `count` ("Məhsul sayı") is the only centered header — the shared Table's
+   <th> has zero left padding (Table.module.css), so a `justify-center` row
+   that's even slightly wider than the column clips a sliver off both edges
+   (a half-cut letter). This small side padding keeps the label off the th's
+   actual clip boundary; the real fix is COUNT_WIDTH itself (table/columns/
+   widths.ts) giving the column enough room in the first place. */
+.colLabelCentered {
+  padding: 0 4px;
+}
+
+.noColLabel {
+  padding-left: 10px;
+}
+
+.colIcon {
+  flex-shrink: 0;
+  color: var(--color-text-faint);
+  cursor: pointer;
+}
+
+.colIcon:hover {
+  color: var(--color-text-muted);
+}
+
+.filterTrigger {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: none;
+  background: none;
+  padding: 0;
+  color: var(--color-text-faint);
+  transition: color 0.15s;
+}
+
+.filterTrigger:hover {
+  color: var(--color-text-muted);
+}
+
+.filterActive {
+  color: var(--color-blue-text);
+}
+
+.filterMenu {
+  z-index: 100;
+  min-width: 200px;
+  max-width: 260px;
+  max-height: 280px;
+  overflow-y: auto;
+  background: var(--color-white);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-md);
+  border: 1px solid var(--color-border-strong);
+  padding: 6px;
+}
+
+/* "Search simple" dropdown pattern — a search field pinned above the
+   scrollable checkbox list, filtering it as you type. */
+.filterSearchWrap {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  margin-bottom: 4px;
+  background: var(--color-white);
+}
+
+.filterSearchIcon {
+  position: absolute;
+  left: 9px;
+  color: var(--color-text-faint);
+  pointer-events: none;
+}
+
+.filterSearchInput {
+  width: 100%;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--color-border-strong);
+  background: var(--color-subtle-bg);
+  padding: 6px 8px 6px 28px;
+  font-size: 13px;
+  font-family: inherit;
+  color: var(--color-text);
+  outline: none;
+  transition: border-color 0.15s;
+}
+
+.filterSearchInput:focus {
+  border-color: var(--color-blue-text);
+  background: var(--color-white);
+}
+
+.filterItem {
+  padding: 8px 10px;
+  border-radius: var(--radius-sm);
+  font-size: 13px;
+  color: var(--color-text);
+  outline: none;
+  transition: background 0.15s;
+}
+
+/* Radix marks the keyboard/mouse-focused item with data-highlighted rather
+   than relying on native :hover, so it works for keyboard nav too. */
+.filterItem[data-highlighted] {
+  background: var(--color-border);
+}
+
+.checkbox {
+  height: 14px;
+  width: 14px;
+  flex-shrink: 0;
+  border-radius: 4px;
+  border: 1px solid var(--color-border-strong);
+  /* Literal white, not var(--color-white) — this is the check icon's color
+     when .checkboxChecked's solid blue background is showing, not a surface. */
+  color: #ffffff;
+  transition: background 0.15s, border-color 0.15s;
+}
+
+.checkboxChecked {
+  border-color: var(--color-blue-text);
+  background: var(--color-blue-text);
+}
+
+.filterEmpty {
+  padding: 8px 10px;
+  font-size: 13px;
+  color: var(--color-text-faint);
+}
+
+.dateMenu {
+  position: fixed;
+  z-index: 100;
+  min-width: 190px;
+  background: var(--color-white);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-md);
+  border: 1px solid var(--color-border-strong);
+  padding: 10px;
+}
+
+.dateMenuLabel {
+  font-size: 11px;
+  font-weight: 500;
+  color: var(--color-text-faint);
+}
+
+/* react-day-picker themes through its own --rdp-* custom properties (see
+   node_modules/react-day-picker/src/style.css), but a handful of its rules
+   (rdp-month_caption, rdp-selected) hardcode a large bold font-size directly
+   instead of reading a --rdp-* var, and rdp-root itself declares the same
+   --rdp-day---rdp-nav-* vars our dayPicker class also sets on the very
+   same element (DayPicker puts both classes on one node) - an equal
+   specificity tie the vendor stylesheet was winning in practice, which is
+   why the calendar was rendering at its full default size (44px day cells,
+   large bold caption) instead of this compact theme. The important flags
+   below are what actually force these past the vendor own rules. */
+.dayPicker {
+  --rdp-accent-color: var(--color-green) !important;
+  --rdp-accent-background-color: var(--color-green-bg) !important;
+  --rdp-today-color: var(--color-green-dark) !important;
+  --rdp-day-width: 28px !important;
+  --rdp-day-height: 28px !important;
+  --rdp-day_button-width: 26px !important;
+  --rdp-day_button-height: 26px !important;
+  --rdp-day_button-border-radius: var(--radius-sm);
+  --rdp-nav-height: 1.4rem !important;
+  --rdp-nav_button-width: 1.1rem !important;
+  --rdp-nav_button-height: 1.1rem !important;
+  --rdp-weekday-padding: 2px 0 !important;
+  --rdp-weekday-opacity: 1;
+  --rdp-months-gap: 0 !important;
+  margin: 0;
+  font-size: 13px;
+  color: var(--color-text);
+}
+
+.dayPicker :global(.rdp-weekday) {
+  color: var(--color-text-faint);
+  font-weight: 500;
+  font-size: 10px !important;
+}
+
+.dayPicker :global(.rdp-month_caption) {
+  font-size: 13px !important;
+  font-weight: 600 !important;
+  color: var(--color-text-strong);
+}
+
+.dayPicker :global(.rdp-chevron) {
+  width: 10px !important;
+  height: 10px !important;
+}
+
+/* Excludes the already-selected day (:not(:global(.rdp-selected)) on the
+   ancestor cell, same pattern as the rdp-today rule below) so hovering the
+   selected day does not swap its solid green fill + white text for a pale
+   hover tint the white text then disappears against - the selected day
+   should look the same whether hovered or not. */
+.dayPicker :global(.rdp-day):not(:global(.rdp-selected)) :global(.rdp-day_button:hover:not([disabled])) {
+  background: var(--color-green-bg) !important;
+}
+
+/* react-day-picker style.css hardcodes rdp-selected to a large bold font
+   size, not driven by any --rdp-* variable, so the --rdp-day-* overrides
+   above do not touch it - meaning the moment a date is picked, that one day
+   balloons in size against the rest of the compact calendar. Reset it back
+   down to the calendar own scale. */
+.dayPicker :global(.rdp-selected) {
+  font-size: 13px !important;
+  font-weight: 500 !important;
+}
+
+/* Literal white, not var(--color-white) — that token means "card/surface
+   background" everywhere else (see index.css's dark-mode block), which in
+   dark mode is a dark color, not white. Here it's genuinely text-on-a-solid-
+   green-circle, which needs to stay white in both themes. */
+.dayPicker :global(.rdp-selected) :global(.rdp-day_button) {
+  background: var(--color-green);
+  color: #ffffff;
+}
+
+.dayPicker :global(.rdp-today):not(:global(.rdp-selected)) :global(.rdp-day_button) {
+  border: 2px solid var(--color-green);
+}
+
+.dateMenuActions {
+  margin-top: 2px;
+}
+
+.dateTodayBtn {
+  border: 1px solid var(--color-blue-border);
+  border-radius: var(--radius-sm);
+  background: var(--color-blue-bg);
+  padding: 6px 10px;
+  font-size: 11px;
+  font-weight: 500;
+  font-family: inherit;
+  color: var(--color-blue-text);
+  transition: background 0.15s;
+}
+
+.dateTodayBtn:hover {
+  background: var(--color-blue-border);
+}
+
+/* Requested: swap the blue theme for white in dark mode specifically for
+   this button, instead of the app-wide --color-blue-* tokens (those stay
+   blue everywhere else, including on this same button in light mode) - a
+   translucent white tint (matching the badge *-bg rgba-tint approach in
+   the index.css dark block) rather than solid white, so it reads correctly
+   against the dark surface instead of looking like a stray light box. */
+:global([data-theme="dark"]) .dateTodayBtn {
+  border-color: rgba(255, 255, 255, 0.35);
+  background: rgba(255, 255, 255, 0.12);
+  color: #ffffff;
+}
+
+:global([data-theme="dark"]) .dateTodayBtn:hover {
+  background: rgba(255, 255, 255, 0.22);
+}
+
+.dateMenuActions .filterClear {
+  margin-top: 0;
+  border-top: none;
+  border-radius: var(--radius-sm);
+  padding: 6px 10px;
+}
+
+.filterClear {
+  margin-top: 2px;
+  border: none;
+  border-top: 1px solid var(--color-border);
+  background: none;
+  padding: 8px 10px;
+  font-size: 13px;
+  font-family: inherit;
+  color: var(--color-red-text);
+  outline: none;
+}
+
+.filterClear:hover,
+.filterClear[data-highlighted] {
+  background: var(--color-red-bg);
+}
+
+.subtotalNote {
+  font-size: 12px;
+  color: var(--color-text-faint);
+}

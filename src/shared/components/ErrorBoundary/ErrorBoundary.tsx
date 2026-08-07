@@ -1,0 +1,33 @@
+import { Component } from 'react'
+import type { ErrorInfo } from 'react'
+import { ServerCrash } from 'lucide-react'
+import Button from '@/shared/components/Button'
+import type { ErrorBoundaryProps, ErrorBoundaryState } from '@/types/shared'
+import styles from './ErrorBoundary.module.css'
+
+export default class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundaryState> {
+  override state: ErrorBoundaryState = { hasError: false }
+
+  static getDerivedStateFromError(): ErrorBoundaryState {
+    return { hasError: true }
+  }
+
+  override componentDidCatch(error: Error, info: ErrorInfo) {
+    console.error(error, info)
+  }
+
+  override render() {
+    if (!this.state.hasError) return this.props.children
+
+    return (
+      <div className={`flex flex-col items-center justify-center gap-2.5 text-center ${styles.page}`}>
+        <span className={`flex items-center justify-center ${styles.badge}`}>
+          <ServerCrash size={32} />
+        </span>
+        <h1 className={styles.title}>Nəsə səhv getdi</h1>
+        <p className={styles.text}>Sorğunu yerinə yetirmək mümkün olmadı. Bir az sonra yenidən cəhd edin.</p>
+        <Button onClick={() => (window.location.href = '/sifarisler')}>Ana səhifəyə qayıt</Button>
+      </div>
+    )
+  }
+}

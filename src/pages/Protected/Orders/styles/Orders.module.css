@@ -1,0 +1,32 @@
+.heading {
+  min-height: var(--page-title-height);
+  margin-bottom: 24px;
+  font-size: 24px;
+  font-weight: 700;
+  color: var(--color-text-strong);
+}
+
+/* Deliberately horizontal-scroll (nowrap), not flex-wrap — the six
+   StatCards wrapping to 2 rows on a narrower/shorter viewport (a real
+   reported bug, not a hypothetical) silently ate into the fixed vertical
+   budget `AdminLayout`'s `.main` assumes for its one flexible child (the
+   table), squeezing the table down to 1-2 visible rows on a screen that
+   should still show a full page. Keeping this row exactly one card tall
+   at all times, and letting it scroll sideways instead, means the table
+   always gets the same amount of vertical space regardless of viewport
+   width. Hidden scrollbar, same pattern as Table.module.css's `.scroll`. */
+.stats {
+  display: flex;
+  flex-wrap: nowrap;
+  overflow-x: auto;
+  scrollbar-width: none;
+  margin-bottom: 24px;
+}
+
+.stats::-webkit-scrollbar {
+  display: none;
+}
+
+.stats > * {
+  flex-shrink: 0;
+}

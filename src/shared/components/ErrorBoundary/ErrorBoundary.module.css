@@ -1,0 +1,27 @@
+.page {
+  min-height: 100vh;
+  padding: 24px;
+  background: var(--color-white);
+}
+
+.badge {
+  height: 72px;
+  width: 72px;
+  margin-bottom: 8px;
+  border-radius: 999px;
+  background: var(--color-red-bg);
+  color: var(--color-red-text);
+}
+
+.title {
+  font-size: 22px;
+  font-weight: 700;
+  color: var(--color-text-strong);
+}
+
+.text {
+  max-width: 360px;
+  margin-bottom: 8px;
+  font-size: 14px;
+  color: var(--color-text-muted);
+}

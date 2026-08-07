@@ -1,0 +1,10 @@
+.headerRow {
+  min-height: var(--page-title-height);
+  margin-bottom: 24px;
+}
+
+.heading {
+  font-size: 24px;
+  font-weight: 700;
+  color: var(--color-text-strong);
+}

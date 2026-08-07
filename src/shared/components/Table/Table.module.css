@@ -1,0 +1,66 @@
+.scroll {
+  flex: 1;
+  min-height: 0;
+  overflow: auto;
+  /* Rounds the sticky thead's top corners. Can't put this on `thead tr`
+     itself — border-radius has no effect on table elements once
+     border-collapse: collapse is set, so it has to clip via this wrapper. */
+  border-radius: 8px 8px 0 0;
+  scrollbar-width: none; /* Firefox */
+  -ms-overflow-style: none; /* legacy Edge */
+}
+
+.scroll::-webkit-scrollbar {
+  display: none; /* Chrome/Safari/Edge Chromium — scrolling stays functional, just invisible */
+}
+
+.table {
+  width: 100%;
+  table-layout: fixed;
+  border-collapse: collapse;
+  font-size: 14px;
+}
+
+.table thead tr {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  background: var(--color-subtle-bg);
+  border-bottom: 1px solid var(--color-border-strong);
+  text-align: left;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--color-text-muted);
+}
+
+.table th {
+  padding: 12px 8px 12px 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.table th:first-child,
+.table td:first-child {
+  text-align: center;
+}
+
+.table tbody tr {
+  height: var(--table-row-height);
+  border-bottom: 1px solid var(--color-border);
+  color: var(--color-text-muted);
+}
+
+.table td {
+  padding: 12px 8px 12px 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  vertical-align: middle;
+}
+
+.emptyRow td {
+  padding: 32px 0;
+  text-align: center;
+  color: var(--color-text-faint);
+}
