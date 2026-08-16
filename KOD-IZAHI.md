@@ -29,7 +29,7 @@ Bu sənəd, layihədəki **hər bir faylı sətir-sətir** izah edir. Heç bir p
 17. [Layout: `AdminLayout.tsx`, `Sidebar.tsx`, `Header.tsx`](#hissə-17-layout)
 18. [Səhifələr: Login, NotFound, Categories, Campaigns, Products, Orders, Users](#hissə-18-səhifələr)
 19. [CSS Modules necə işləyir](#hissə-19-css-modules)
-20. [Tooling: `tsconfig.json`, `.oxlintrc.json`, `vite-env.d.ts`](#hissə-20-tooling)
+20. [Tooling: `vite.config.ts`, `vercel.json`, `tsconfig.json`, `.oxlintrc.json`, `vite-env.d.ts`](#hissə-20-tooling)
 21. [Lüğət — tez-tez rast gələcəyiniz sözlər](#hissə-21-lüğət)
 
 ---
@@ -886,7 +886,7 @@ export interface LoginPasswordFieldProps {
   3. **`XForm`** — BİR `<Modal>` FORMASININ STATE-DƏ SAXLADIĞI FORMA (ADƏTƏN `X`-Ə OXŞAYIR, AMMA BƏZƏN FƏRQLİDİR — AŞAĞIDA `ProductForm` MİSALI VAR).
   4. **`XPayload`** — SERVERƏ YARATMA/YENİLƏMƏDƏ GÖNDƏRİLƏN FORMA (`mapXToApi`-NİN QAYTARDIĞI, ADƏTƏN `id`/`created_at` KİMİ "SERVERİN ÖZÜ YARATDIĞI" SAHƏLƏR OLMADAN).
 
-  `Order` QOVLUĞUNDA, ƏLAVƏ OLARAQ, CƏDVƏLİN SIRALAMA/FİLTRASİYA MƏNTİQİNƏ AİD BİR NEÇƏ KİÇİK TİP DƏ VAR (`SortKey`, `SortState`, `CountBucket`, `ShippingBucket`, `ColumnHeaderProps`, `DateColumnHeaderProps` VƏ S.) — BUNLAR HEÇ BİR BAŞQA SƏHİFƏYƏ AİD DEYİL, ONA GÖRƏ `types/order/`-DƏ, YALNIZ `Orders` SƏHİFƏSİNİN ÖZÜNÜN İSTİFADƏ ETDİYİ TİPLƏR KİMİ YAŞAYIR (Hissə 18-Ə BAXIN).
+  `Order` QOVLUĞUNDA, ƏLAVƏ OLARAQ, CƏDVƏLİN SIRALAMA/FİLTRASİYA MƏNTİQİNƏ AİD BİR NEÇƏ KİÇİK TİP DƏ VAR (`SortKey`, `SortState`, `ShippingBucket`, `ColumnHeaderProps`, `CountColumnHeaderProps`, `DateColumnHeaderProps` VƏ S. — KÖHNƏ `CountBucket` TİPİ, "Məhsul sayı" BUCKET-FİLTRİ DƏQİQ-ƏDƏD İNPUTUNA DƏYİŞDİRİLƏNDƏ SİLİNİB) — BUNLAR HEÇ BİR BAŞQA SƏHİFƏYƏ AİD DEYİL, ONA GÖRƏ `types/order/`-DƏ, YALNIZ `Orders` SƏHİFƏSİNİN ÖZÜNÜN İSTİFADƏ ETDİYİ TİPLƏR KİMİ YAŞAYIR (Hissə 18-Ə BAXIN).
 
 **Misal — `types/product/` (ƏN MÜRƏKKƏB OLANI — BURADA, OXUNUŞ ÜÇÜN, HAMISI TƏK BLOKDA GÖSTƏRİLİR, ƏSLİNDƏ HƏR `interface` ÖZ FAYLINDADIR: `ProductCategoryShort.ts`, `ProductApi.ts`, `Product.ts`, `ProductForm.ts`, `ProductPayload.ts`):**
 ```ts
@@ -969,6 +969,7 @@ export interface User {
   id: number
   initial: string
   color: string
+  imageUrl: string | null
   name: string
   phone: string
   address: string
@@ -1657,6 +1658,7 @@ export const mapUserFromApi = (u: UserApi): User => ({
   id: u.id,
   initial: (u.full_name || '?').charAt(0).toUpperCase(),
   color: '#22c55e',
+  imageUrl: u.img_url,
   name: u.full_name,
   phone: u.phone,
   address: u.address || 'Qeyd olunmayıb',
@@ -1664,6 +1666,8 @@ export const mapUserFromApi = (u: UserApi): User => ({
 })
 ```
 `initial: (u.full_name || '?').charAt(0).toUpperCase()` — İSTİFADƏÇİNİN adının BİRİNCİ HƏRFİNİ (avatar üçün) ÇIXARIR: `u.full_name || '?'` (ad YOXDURSA "?" işarəsi), `.charAt(0)` (BİRİNCİ SİMVOLU götürür), `.toUpperCase()` (BÖYÜK hərfə çevirir). Bu faylda `mapUserToApi` YOXDUR — çünki İstifadəçilər səhifəsi READ-ONLY-dir (yaratmaq/silmək YOXDUR), API-yə HEÇ NƏ GÖNDƏRİLMİR (ONA GÖRƏ `src/types/user.ts`-DƏ DƏ `UserForm`/`UserPayload` TİPLƏRİ YOXDUR — YALNIZ `UserApi` VƏ `User`).
+
+**`imageUrl: u.img_url` — SONRADAN ƏLAVƏ EDİLƏN BİR SƏTİR:** BACKEND `UserApi.img_url`-U HƏMİŞƏ GÖNDƏRİRDİ (AYRI BİR Next.js KLİENT TƏTBİQİNDƏ İSTİFADƏÇİLƏR ÖZ PROFİL ŞƏKİLLƏRİNİ YÜKLƏYƏ BİLİR), AMMA ADMİN PANELDƏ HEÇ VAXT `User` TİPİNƏ "TƏRCÜMƏ" OLUNMURDU — YƏNİ, DATA ARTIQ VAR İDİ, SADƏCƏ BU BİR SƏTİRLİK "KÖRPÜ" ÇATIŞMIRDI. Bu, Hissə 10-un ÜMUMİ FİKRİNİN BİR NÜMUNƏSİDİR: ADAPTER FAYLLARI, BACKEND-İN GÖNDƏRDİYİ HƏR SAHƏNİN, `User`-İN ÖZÜNDƏ (Hissə 5) DƏ EYNİ ADLA (VƏ YA FƏRQLİ, DAHA OXUNAQLI ADLA) MÖVCUD OLMASINI TƏMİN EDİR — BURADA `img_url` (snake_case, backend adı) → `imageUrl` (camelCase, tətbiqin öz adı) OLUR, EYNİ `category`/`product` ADAPTERLƏRİNDƏKİ `img_url` → `imageUrl` NÜMUNƏSİ İLƏ.
 
 ---
 
@@ -2590,7 +2594,7 @@ export default function AdminLayout() {
         <div className={styles.bodyInner}>
           <Sidebar />
           <main className={styles.main}>
-            <Outlet context={{ search: debouncedSearch } satisfies LayoutOutletContext} />
+            <Outlet context={{ search: debouncedSearch.trim() } satisfies LayoutOutletContext} />
           </main>
         </div>
       </div>
@@ -2604,6 +2608,7 @@ BU, 5 QORUNAN SƏHİFƏNİN "ÇƏRÇİVƏSİDİR" — SIDEBAR + HEADER + AXTARI�
 - `<Header search={search} onSearchChange={setSearch} />` — HEADER-Ə XAM MƏTNİ VƏ ONU DƏYİŞMƏK FUNKSİYASINI ÖTÜRÜR.
 - **`<Outlet context={{ search: debouncedSearch } satisfies LayoutOutletContext} />`** — Hissə 3-DƏ İZAH OLUNAN `satisfies` OPERATORU MƏHZ BURADA İŞLƏDİLİR: `{search: debouncedSearch}` OBYEKTİNİN, `LayoutOutletContext` (Hissə 5-Ə BAXIN, `{search: string}`) TİPİNƏ **DƏQİQ UYĞUN OLDUĞUNU** TƏSDİQLƏYİR. `context` — react-router-dom-un XÜSUSİ BİR MEXANİZMİDİR: `AdminLayout`-UN İÇİNDƏ RENDER OLUNAN İSTƏNİLƏN SƏHİFƏ `useOutletContext<LayoutOutletContext>()` HOOK-U İLƏ BU OBYEKTİ OXUYA BİLİR — BELƏLİKLƏ AXTARIŞ MƏTNİ VALİDEYNDƏN (LAYOUT-DAN) UŞAQLARA (SƏHİFƏLƏRƏ) "PROP DRILLING" (ƏL-ƏL ÖTÜRMƏ) OLMADAN ÇATIR. **DİQQƏT — `useOutletContext<LayoutOutletContext>()`-DƏKİ `<LayoutOutletContext>` VƏ BURADAKI `satisfies LayoutOutletContext` İKİ AYRI YERDƏ, EYNİ TİPƏ İŞARƏ EDİR** — BİRİ "GÖNDƏRƏN" (PRODUCER) TƏRƏFİ, DİGƏRİ "QƏBUL EDƏN" (CONSUMER) TƏRƏFİ TİPLƏYİR, İKİSİ EYNİ TİP OLMASA, TypeScript UYĞUNSUZLUĞU TUTARDI.
 - **`useLocation()` + `useEffect(() => setSearch(''), [pathname])`** — BU, BİR REAL BUQ-UN DÜZƏLİŞİDİR: `AdminLayout` SƏHİFƏLƏR ARASI KEÇİDDƏ (MƏS. `/istifadeciler`-DƏN `/sifarisler`-Ə) YENİDƏN MOUNT OLMUR (SADƏCƏ `<Outlet/>`-İN İÇİ DƏYİŞİR), ONA GÖRƏ `search` STATE-İ ÖZÜ-ÖZÜNƏ SIFIRLANMIR. BUNSUZ, MƏSƏLƏN İSTİFADƏÇİLƏR SƏHİFƏSİNDƏ BİR ADI AXTARIB SONRA BAŞQA SƏHİFƏYƏ KEÇSƏNİZ, HƏMİN KÖHNƏ AXTARIŞ MƏTNİ O SƏHİFƏNİN ÖZ FİLTERİNƏ DƏ TƏTBİQ OLUNURDU (ÇÜNKİ EYNİ `debouncedSearch` DƏYƏRİ `LayoutOutletContext` VASİTƏSİLƏ BÜTÜN SƏHİFƏLƏRƏ GEDİR) — NƏTİCƏDƏ HEÇ NƏ UYĞUN GƏLMİR, CƏDVƏL BOŞ GÖRÜNÜRDÜ, VƏ YALNIZ SƏHİFƏNİ YENİLƏMƏK (`search` STATE-İ SIFIRDAN BAŞLADIĞI ÜÇÜN) BUNU "DÜZƏLDİRDİ". `useLocation()`-DAN GƏLƏN `pathname` HƏR ROUTE DƏYİŞƏNDƏ FƏRQLİ OLUR, ONA GÖRƏ `[pathname]` DEPENDENCY-Sİ İLƏ, HƏR SƏHİFƏ KEÇİDİNDƏ `setSearch('')` AVTOMATİK ÇAĞIRILIR.
+- **`debouncedSearch.trim()` — SONRADAN ƏLAVƏ EDİLƏN, BAŞQA BİR REAL BUQ-UN DÜZƏLİŞİ:** İSTİFADƏÇİ, MƏSƏLƏN, "xeyyam" YAZIB SONRA TƏSADÜFƏN BOŞLUQ (VƏ YA BİRDƏN ARTIQ BOŞLUQ) BASANDA, NƏTİCƏLƏR BİRDƏN-BİRƏ YOX OLURDU — SƏBƏBİ: `"xeyyam elizadə".includes("xeyyam ")` HƏLƏ DƏ `true`-DUR (BİR BOŞLUQLA), AMMA `"xeyyam elizadə".includes("xeyyam  ")` (İKİ BOŞLUQLA) ARTIQ `false`-DUR — ÇÜNKİ HƏQİQİ MƏTNDƏ İKİ ARDICIL BOŞLUQ YOXDUR. `.trim()` BU PROBLEMİ HƏLL EDİR, AMMA **`Header`-İN ÖZÜNÜN `onChange`-İNDƏ YOX** — ORADA `.trim()` VERSƏYDİK, İSTİFADƏÇİ HƏLƏ SÖZ YAZMAQDA OLARKƏN (MƏS. "xeyyam əli" YAZARKƏN, ORTADAKI BOŞLUQ HƏLƏ SONA ÇATMAMIŞ) İNPUTUN ÖZÜ QƏRİBƏ DAVRANARDI. ONA GÖRƏ `.trim()` MƏHZ BURADA, YALNIZ SƏHİFƏLƏRƏ GEDƏN (ARTIQ DEBOUNCE OLUNMUŞ) DƏYƏRƏ TƏTBİQ OLUNUR — İNPUTUN ÖZÜNDƏ İSTİFADƏÇİNİN YAZDIĞI HƏR ŞEY (BOŞLUQLAR DAXİL) OLDUĞU KİMİ QALIR.
 
 ### `src/components/Sidebar/Sidebar.tsx`
 
@@ -3406,7 +3411,7 @@ Bu, LAYİHƏDƏ ƏLAVƏ EDİLƏN, ƏN BÖYÜK TƏKMİLLƏŞDİRMƏLƏRDƏN BİR�
 | No | ❌ dekorativ | ❌ dekorativ |
 | Tarix | ✅ real (xronoloji) | ✅ real (tarix seçici, react-day-picker) |
 | Çatdırılma ünvanı | ❌ dekorativ | ❌ dekorativ |
-| Məhsul sayı | ✅ real (rəqəm) | ✅ real (3 bucket: 1-5 / 6-10 / 10+) |
+| Məhsul sayı | ✅ real (rəqəm) | ✅ real (dəqiq ədəd, `<input type="number">` — əvvəllər 3 bucket idi: 1-5 / 6-10 / 10+) |
 | Subtotal/Çatdırılma | ✅ real (məbləğ) | ✅ real (2 bucket: Pulsuz / Ödənişli) |
 | Status | ✅ real (enum sırası) | ✅ real (checkbox siyahısı) |
 | Əməliyyat | ❌ | ❌ |
@@ -3419,6 +3424,7 @@ Orders/table/
 ├── columns/widths.ts                 → pinned (sabit) enlər
 ├── components/OrdersTable.tsx        → cədvəlin özü (Table-a tanstack sətir/hücrələrini verir)
 ├── components/ColumnHeader.tsx       → checkbox-siyahı filtri (Radix DropdownMenu ilə)
+├── components/CountColumnHeader.tsx  → "Məhsul sayı" filtri, dəqiq ədəd inputu (aşağıda ayrıca izah olunur)
 ├── components/DateColumnHeader.tsx   → tarix filtri açan düymə (DateFilterCalendar-ı lazy yükləyir)
 ├── components/DateFilterCalendar.tsx → react-day-picker təqvimi (lazy chunk)
 ├── components/SortTrigger.tsx        → sıralama oxu (dekorativ/real hər ikisi üçün ortaq)
@@ -3430,12 +3436,6 @@ Orders/table/
 
 **`utils/filters.ts` — SAF FUNKSİYALAR (nə state, nə sorğu):**
 ```ts
-export const COUNT_BUCKETS: readonly CountBucket[] = ['1-5', '6-10', '10+']
-export const matchesCountBucket = (count: number, bucket: CountBucket) => {
-  if (bucket === '1-5') return count >= 1 && count <= 5
-  if (bucket === '6-10') return count >= 6 && count <= 10
-  return count >= 11
-}
 export const SHIPPING_BUCKETS: readonly ShippingBucket[] = ['Pulsuz', 'Ödənişli']
 export const matchesShipping = (freeShipping: boolean, bucket: ShippingBucket) => bucket === 'Pulsuz' ? freeShipping : !freeShipping
 
@@ -3446,8 +3446,10 @@ export const dateFilterFn: FilterFn<Order> = (row, _columnId, filterValue: strin
   filterValue === '' || toDateInputValue(row.original.createdAt) === filterValue
 export const statusFilterFn: FilterFn<Order> = (row, _columnId, filterValue: Set<OrderStatus>) =>
   filterValue.size === 0 || filterValue.has(row.original.status)
-export const countFilterFn: FilterFn<Order> = (row, _columnId, filterValue: Set<CountBucket>) =>
-  filterValue.size === 0 || [...filterValue].some((b) => matchesCountBucket(row.original.itemCount, b))
+// Dəqiq bərabərlik — "5" yazılanda YALNIZ 5 məhsullu sifarişlər, əvvəlki
+// bucket-əsaslı (1-5/6-10/10+) versiya CountColumnHeader-lə birlikdə silindi.
+export const countFilterFn: FilterFn<Order> = (row, _columnId, filterValue: string) =>
+  filterValue === '' || row.original.itemCount === Number(filterValue)
 export const shippingFilterFn: FilterFn<Order> = (row, _columnId, filterValue: Set<ShippingBucket>) =>
   filterValue.size === 0 || [...filterValue].some((b) => matchesShipping(row.original.freeShipping, b))
 export const globalFilterFn: FilterFn<Order> = (row, _columnId, filterValue: string) =>
@@ -3471,7 +3473,7 @@ export function useOrderColumnDefs({ columnHelper, statusFilter, setStatusFilter
       meta: { width: 115 },
     }),
     // ... address (dekorativ), count, subtotal, status (hərəsi öz header/cell funksiyası ilə), action
-  ], [columnHelper, statusFilter, dateFilter, countFilter, shippingFilter, sort, onView])
+  ], [columnHelper, statusFilter, dateFilter, shippingFilter, sort, onView]) // countFilter BURADA YOXDUR — aşağıdakı CountColumnHeader-ə baxın, niyə
 }
 ```
 - **`columnHelper.display(...)` VS `columnHelper.accessor(...)`** — tanstack-table-IN ÖZ AYRIMIDIR: `display` — HEÇ BİR DATA SAHƏSİNƏ "BAĞLI" OLMAYAN sütun (`no`, `action` — sadəcə göstərmək üçün, filtrlənə/sıralana BİLMƏZ); `accessor((o) => o.createdAt, {...})` — DATA-DAN BİR DƏYƏR "ÇIXARAN" (BURADA — SIRALAMA/FİLTR ÜÇÜN LAZIM OLAN XAM DƏYƏR) sütun, İKİNCİ ARQUMENTDƏ İSƏ `filterFn`/`sortingFn` TƏYİN OLUNUR.
@@ -3481,7 +3483,7 @@ export function useOrderColumnDefs({ columnHelper, statusFilter, setStatusFilter
 
 **SONRADAN, BU FAYLIN ÖZÜ DƏ (155 SƏTİRDƏN) 99 SƏTRƏ ENDİRİLDİ — `header`/`cell` JSX-i İKİ YENİ FAYLA ÇIXARILARAQ:**
 - **`table/components/cellRenderers.tsx`** — HƏR SÜTUNUN `cell:` XÜSUSİYYƏTİNDƏKİ JSX-İ, `columnLabel.tsx` İLƏ EYNİ NAXIŞLA (kiçik hərflə başlayan, sadə funksiya, ÖZ `Props` TİPİ TƏLƏB ETMİR), AYRI-AYRI FUNKSİYALARA ÇÖVRİLİB: `countCell(order)`, `subtotalCell(order)`, `statusCell(order)`, `actionCell(order, onView)`. İSTİFADƏSİ: `cell: (info) => statusCell(info.row.original)`.
-- **`table/components/headerRenderers.tsx`** — EYNİ NAXIŞLA, İNDİ DƏ `header:`-DƏKİ JSX ÜÇÜN: `dateHeader(value, onChange, sort, toggleSort)`, `countHeader(...)`, `subtotalHeader(...)`, `statusHeader(...)` — HƏR BİRİ ÖZ `DateColumnHeader`/`ColumnHeader` ÇAĞIRIŞINI BƏLƏDLƏYİR. İSTİFADƏSİ: `header: () => statusHeader(statusFilter, setStatusFilter, sort, toggleSort)`.
+- **`table/components/headerRenderers.tsx`** — EYNİ NAXIŞLA, İNDİ DƏ `header:`-DƏKİ JSX ÜÇÜN: `dateHeader(value, onChange, sort, toggleSort)`, `subtotalHeader(...)`, `statusHeader(...)` — HƏR BİRİ ÖZ `DateColumnHeader`/`ColumnHeader` ÇAĞIRIŞINI BƏLƏDLƏYİR. İSTİFADƏSİ: `header: () => statusHeader(statusFilter, setStatusFilter, sort, toggleSort)`. **`countHeader` İSTİSNADIR** — `countHeader(onChange, sort, toggleSort)`, `value` PARAMETRİ YOXDUR (aşağıdakı `CountColumnHeader` bölməsinə baxın, niyə).
 - **NİYƏ İKİ AYRI FAYL, TƏK FAYL YOX?** `cell`-LƏR SAF GÖRÜNTÜ FUNKSİYALARIDIR (`(order: Order) => JSX`, sadəcə DATA GÖSTƏRİR), `header`-LƏR İSƏ İNTERAKTİVDİR (`(value, onChange, sort, toggleSort) => JSX`, filtr/sıralama STATE-İNƏ BAĞLIDIR) — FƏRQLİ FORMALARI OLDUĞU ÜÇÜN AYRI SAXLANIB, EYNİ SƏBƏBLƏ `ColumnHeader.tsx`/`DateColumnHeader.tsx`/`SortTrigger.tsx` DA ARTIQ AYRI FAYLLARDIR.
 - Bu, Hissə 4-dəki "Səhifə-daxili refactor" MƏNTİQİNİN, TƏK BİR HOOK-UN İÇİNDƏ TƏKRARLANMASIDIR — FƏRQ, BURADA BÖLÜNƏN ŞEYİN BÜTÖV BİR SƏHİFƏ YOX, TƏK BİR `useMemo` MASSİVİ OLMASIDIR.
 
@@ -3490,7 +3492,7 @@ export function useOrderColumnDefs({ columnHelper, statusFilter, setStatusFilter
 export function useOrdersTable(orders: Order[], search: string, onView: (id: number) => void) {
   const [statusFilter, setStatusFilter] = useState<Set<OrderStatus>>(new Set())
   const [dateFilter, setDateFilter] = useState('')
-  const [countFilter, setCountFilter] = useState<Set<CountBucket>>(new Set())
+  const [countFilter, setCountFilter] = useState('') // dəqiq ədəd stringi, "" = filtr yoxdur
   const [shippingFilter, setShippingFilter] = useState<Set<ShippingBucket>>(new Set())
   const [sort, setSort] = useState<SortState>(null)
 
@@ -3591,12 +3593,64 @@ export function ColumnHeader<T extends string>({ label, options, getOptionLabel 
   )
 }
 ```
-- **`<T extends string>`** — Hissə 3-dəki GENERİK, BİR MƏHDUDİYYƏTLƏ (`extends string`): `Set<T>`-in dəyərləri JSX-də `key={option}` VƏ MƏTN KİMİ GÖSTƏRİLDİYİ ÜÇÜN, `T` SADƏCƏ "İSTƏNİLƏN ŞEY" OLA BİLMƏZ. BU KOMPONENT ÜÇ FƏRQLİ YERDƏ, ÜÇ FƏRQLİ `T` İLƏ ÇAĞIRILIR: `ColumnHeader<OrderStatus>`, `ColumnHeader<CountBucket>`, `ColumnHeader<ShippingBucket>` (`useOrderColumnDefs.tsx`-də).
+- **`<T extends string>`** — Hissə 3-dəki GENERİK, BİR MƏHDUDİYYƏTLƏ (`extends string`): `Set<T>`-in dəyərləri JSX-də `key={option}` VƏ MƏTN KİMİ GÖSTƏRİLDİYİ ÜÇÜN, `T` SADƏCƏ "İSTƏNİLƏN ŞEY" OLA BİLMƏZ. BU KOMPONENT İKİ FƏRQLİ YERDƏ, İKİ FƏRQLİ `T` İLƏ ÇAĞIRILIR: `ColumnHeader<OrderStatus>`, `ColumnHeader<ShippingBucket>` (`useOrderColumnDefs.tsx`-də) — ÜÇÜNCÜ ÇAĞIRIŞ (`ColumnHeader<CountBucket>`, "Məhsul sayı" ÜÇÜN) ARTIQ YOXDUR, AŞAĞIDAKI `CountColumnHeader`-Ə BAXIN.
 - **`centered` PROP-U VƏ BİR REAL BUQ:** `Məhsul sayı` SÜTUNU YEGANƏSİDİR Kİ `centered` VERİR — BAŞLIQ (ETİKET + SIRALAMA İKONU + FİLTR İKONU) MƏRKƏZLƏŞDİRİLİR. AMMA BU SÜTUN ÇOX DAR İDİ (CƏMİ 10%, `table/columns/widths.ts`-DƏKİ `COUNT_WIDTH`), VƏ SHARED `Table`-in `<th>`-İNİN SOLDAN PADDİNQ-İ SIFIRDIR (Hissə 14-Ə BAXIN) — NƏTİCƏDƏ, MƏRKƏZLƏŞDİRİLMİŞ MƏZMUN SÜTUNDAN GENİŞ OLDUĞUNDA, HƏR İKİ KƏNARDAN BİR AZ "KƏSİLİRDİ" (HƏRFİN YARISI GÖRÜNMÜRDÜ). DÜZƏLİŞ İKİ HİSSƏLİ İDİ: (1) `COUNT_WIDTH` 10-DAN **14**-ə QALDIRILDI (ƏSAS DÜZƏLİŞ — SÜTUN SADƏCƏ ÖZ MƏZMUNU ÜÇÜN DAR İDİ), (2) `ColumnHeader.tsx`-in ÖZÜNƏ, `centered` DOĞRU OLANDA, KİÇİK BİR YAN PADDİNQ VERƏN `.colLabelCentered` SİNİFİ ƏLAVƏ OLUNDU (`OrdersTable.module.css`) — TƏHLÜKƏSİZLİK MARGİNİ KİMİ. **DƏRS: PADDİNQ TƏK BAŞINA HƏLL DEYİL** — MƏZMUN SÜTUNDAN HƏQİQƏTƏN GENİŞSƏ, PADDİNQ ONU YENƏ DƏ KƏSƏR, ONA GÖRƏ ƏSL DÜZƏLİŞ HƏMİŞƏ SÜTUNU KİFAYƏT QƏDƏR GENİŞ ETMƏKDİR.
 - **NİYƏ ARTIQ ÖZ `createPortal`/`useColumnMenu` ÇAĞIRIŞI YOX, `DropdownMenu.Root`/`Trigger`/`Portal`/`Content`?** BU, @radix-ui/react-dropdown-menu-A KEÇİDDİR (Hissə 1-ə baxın) — ƏVVƏLKİ VERSİYADA (AŞAĞIDA GÖRƏCƏYİMİZ `DateColumnHeader` KİMİ) BU KOMPONENT ÖZÜ `useColumnMenu` (aç/bağla/pozisiya/kənara-klik) İŞLƏDİRDİ; İNDİ İSƏ, CHECKBOX SİYAHISI ÜÇÜN, ƏLÇATANLIQ (KLAVİATURA İLƏ NAVİQASİYA, FOKUS TƏLƏSİ) DAHA VACİB OLDUĞUNDAN, RADİX-İN HAZIR PRİMİTİVLƏRİNƏ KEÇİLİB — `DateColumnHeader` İSƏ (BİR TƏQVİM AÇAN, SADƏCƏ BİR DÜYMƏ OLDUĞU ÜÇÜN) HƏLƏ DƏ ÖZ `useColumnMenu`-SUNU İŞLƏDİR. **BU, İKİ FƏRQLİ HƏLLİN EYNİ FAYLDA YAŞAMASININ SƏBƏBİDİR** — İKİSİ DƏ DÜZGÜNDÜR, SEÇİM MENYUNUN NÖVÜNƏ (SİYAHI VS TƏQVİM) GÖRƏ EDİLİB.
 - `getOptionLabel?: (option: T) => string`, DEFAULT `(option) => option` — Hissə 2-DƏKİ DESTRUCTURING DEFAULT DƏYƏRLƏRİNƏ BAXIN: `Status` ÜÇÜN `(s) => ORDER_STATUS_LABELS[s]` VERİLİR, `Məhsul sayı`/`Subtotal` ÜÇÜN İSƏ DEFAULT KİFAYƏT EDİR (`'1-5'`/`'Pulsuz'` ARTIQ ÖZÜ OXUNAQLIDIR).
 - **`centered?: boolean` PROP-U — NİYƏ LAZIM OLDU?** "Məhsul sayı" SÜTUNUNUN XANALARINI (`<td>`) ORTALAMAQ ÜÇÜN, ƏVVƏLCƏ SADƏCƏ `<td>`-NİN ÖZÜNƏ `text-align: center` VERİLİB, AMMA İŞLƏMƏYİB — SƏBƏBİ: `ColumnHeader`-İN KÖK ELEMENTİ (`<span>`) TAILWIND-İN `flex` KLASI İLƏ "BLOK SƏVİYYƏLİ" (block-level) BİR QUTUDUR, VƏ CSS-İN ÖZ QAYDASINA GÖRƏ BLOK QUTULAR ATA ELEMENTİN `text-align`-INI "EŞİTMİR" (`text-align` YALNIZ INLINE MƏZMUNA TƏSİR EDİR) — ONA GÖRƏ MƏRKƏZLƏŞDİRMƏ BAŞLIQ XANASINDA HEÇ VAXT İŞLƏMİRDİ. HƏLL: `ColumnHeader`-Ə `centered` PROP-U ƏLAVƏ EDİLİB, O DA ÖZ DAXİLİ `<span>`-Ə `justify-center` KLASINI ƏLAVƏ EDİR — MƏRKƏZLƏŞDİRMƏ, ATA ELEMENTİN `text-align`-INDƏN ASILI OLMADAN, KOMPONENTİN ÖZ DAXİLİNDƏ HƏLL OLUNUR. YALNIZ "Məhsul sayı" BUNU `true` VERİR.
 - **`table/components/columnLabel.tsx` NİYƏ AYRI BİR FAYLDADIR (BİR KOMPONENTİN İÇİNDƏ YOX)?** BU, JSX QAYTARAN, AMMA ADLANDIRMA QAYDASINA GÖRƏ (BÖYÜK HƏRFLƏ BAŞLAMADIĞI ÜÇÜN) "KOMPONENT" SAYILMAYAN SADƏ BİR FUNKSİYADIR (`No`/`Çatdırılma ünvanı` KİMİ DEKORATİV BAŞLIQLAR ÜÇÜN). ÖZ FAYLINA ÇIXARILMASININ SƏBƏBİ TypeScript-Ə DEYİL, `oxlint`-İN (Hissə 20-Ə BAXIN) `react-refresh/only-export-components` QAYDASINA GÖRƏDİR — BU QAYDA, BİR FAYLIN YALNIZ KOMPONENTLƏR İXRAC ETMƏSİNİ TƏLƏB EDİR (Kİ "FAST REFRESH" — KOD DƏYİŞƏNDƏ SƏHİFƏNİN TAM YENİLƏNMƏDƏN, YALNIZ DƏYİŞƏN HİSSƏNİN "İSTİ" (hot) YENİLƏNMƏSİ — DÜZGÜN İŞLƏSİN) — BAŞQA BİR KOMPONENT FAYLININ İÇİNDƏ BELƏ BİR "ADİ FUNKSİYA" DA İXRAC OLUNSAYDI, BU QAYDA XƏBƏRDARLIQ VERƏRDİ.
+
+**`table/components/CountColumnHeader.tsx` — "Məhsul sayı" filtri, VƏ REACT-IN "KOMPONENT KİMLİYİ" (component identity) HAQQINDA REAL BİR DƏRS:**
+
+Bu bölmə əvvəllər `ColumnHeader<CountBucket>` idi (yuxarıdakı checkbox-siyahı, 3 bucket ilə) — İSTİFADƏÇİ İSTƏDİ Kİ, "5" YAZANDA YALNIZ TAM 5 MƏHSULLU SİFARİŞLƏR GÖRÜNSÜN (bucket YOX, DƏQİQ ƏDƏD). Sadə görünən bu dəyişiklik, ƏSLİNDƏ, React-in ÖZ ÜÇÜN İÇİNDƏ ÇOX MARAQLI BİR BUQ AŞKARLADI:
+
+```tsx
+export function CountColumnHeader({ label, onChange, sortDir, onSortClick, centered }: CountColumnHeaderProps) {
+  const [value, setValue] = useState('')
+  const { open, setOpen, pos, triggerRef, menuRef, openMenu } = useColumnMenu(170)
+
+  const applyAndClose = () => {
+    onChange(value)
+    setOpen(false)
+  }
+  const handleClear = () => {
+    setValue('')
+    onChange('')
+  }
+
+  return (
+    <span className={styles.colLabel}>
+      {label}
+      <SortTrigger label={label} sortDir={sortDir} onClick={onSortClick} />
+      <button ref={triggerRef} onClick={() => (open ? setOpen(false) : openMenu())}><Filter size={16} /></button>
+      {open && createPortal(
+        <div ref={menuRef} style={{ top: pos.top, left: pos.left }}>
+          <input
+            type="number"
+            value={value}
+            onChange={(e) => setValue(e.target.value)}
+            onKeyDown={(e) => { if (e.key === 'Enter') applyAndClose() }}
+          />
+          {value && <button onClick={handleClear}>Təmizlə</button>}
+        </div>,
+        document.body,
+      )}
+    </span>
+  )
+}
+```
+
+**BİRİNCİ CƏHD (İŞLƏMƏDİ) — BUQ NİYƏ BAŞ VERDİ:** İLK VERSİYADA `value`/`onChange` BAŞQA FİLTRLƏR (`statusFilter`, `dateFilter`) KİMİ, `useOrdersTable`-dəki `countFilter` STATE-İNDƏN BİRBAŞA "İDARƏ OLUNAN" (controlled) PROP OLARAQ GƏLİRDİ. AMMA `countFilter`, EYNİ ZAMANDA, `useOrderColumnDefs`-in `tableColumnDefs` `useMemo`-SUNUN DA BİR DEPENDENCY-Sİ İDİ (Hissə 18-Ə YUXARIDA BAXIN, `[..., countFilter, ...]`) — YƏNİ, İSTİFADƏÇİ İNPUTA HƏR HƏRF YAZDIQCA, BU BÖYÜK `useMemo` **YENİDƏN HESABLANIRDI**, VƏ BU DA HƏR SÜTUNUN `header:` FUNKSİYASININ (O CÜMLƏDƏN `count` SÜTUNUNUN) **TAMAMİLƏ YENİ BİR FUNKSİYA REFERANSI** ALMASI DEMƏK İDİ.
+
+**BURADA REACT-İN ÇOX VACİB BİR QAYDASI DEVREYƏ GİRİR:** tanstack-table-in `flexRender(header.column.columnDef.header, ...)` FUNKSİYASI, `header:`-Ə VERİLƏN BİR FUNKSİYANI (BİZİM `() => countHeader(...)` KİMİ) **KOMPONENT KİMİ RENDER EDİR** (`<Comp {...props} />` FORMASINDA) — VƏ REACT, İKİ RENDER ARASINDA `Comp`-UN "EYNİ FUNKSİYA REFERANSI" OLUB-OLMADIĞINA BAXARAQ QƏRAR VERİR: EYNİDİRSƏ, KOMPONENTİ SADƏCƏ YENİDƏN RENDER EDİR (DAXİLİ `useState`-LƏR SAXLANILIR); FƏRQLİDİRSƏ (BİZİM VƏZİYYƏTİMİZDƏ OLDUĞU KİMİ), REACT KÖHNƏ KOMPONENTİ **TAMAMİLƏ SÖKÜR VƏ YENİSİNİ QURUR** (unmount + mount) — VƏ BU DA, `useColumnMenu`-NUN DAXİLİ `open` STATE-İNİN SIFIRLANMASI DEMƏKDİR. NƏTİCƏ: İSTİFADƏÇİ POPOVER-İ AÇIB BİRİNCİ RƏQƏMİ YAZAN KİMİ, POPOVER GÖZ QIRPIMINDA BAĞLANIRDI — ÇÜNKİ KOMPONENTİN ÖZÜ, "YENİDƏN DOĞULMUŞDU".
+
+**DÜZƏLİŞ:** `countFilter`-in XAM DƏYƏRİ `useOrderColumnDefs`-in PARAMETRLƏRİNDƏN/dependency SİYAHISINDAN TAMAMİLƏ ÇIXARILDI (YALNIZ SABİT `setCountFilter` FUNKSİYASI QALDI — `useState`-in ÖZÜNÜN QAYTARDIĞI SETTER FUNKSİYALAR HƏR RENDERDƏ EYNİ REFERANSI SAXLAYIR, ONA GÖRƏ BUNLAR DEPENDENCY SİYAHISINA EHTİYAC DUYMUR). `CountColumnHeader`-in ÖZÜ İSƏ, YAZILAN DƏYƏRİ ARTIQ ÖZ DAXİLİ `useState`-İNDƏ (`value`) SAXLAYIR — YALNIZ `setCountFilter`-Ə (SABİT REFERANS) ÇAĞIRIŞ EDİR, ONU DEYİL. BELƏLİKLƏ, `count` SÜTUNUNUN `header:` FUNKSİYASI ARTIQ YAZILAN HƏR HƏRFDƏ DƏYİŞMİR, KOMPONENT "SAĞ QALIR", VƏ POPOVER AÇIQ QALIR.
+
+**ÜMUMİ DƏRS (BU LAYİHƏYƏ MƏXSUS DEYİL, REACT-IN ÖZÜNÜN ÜMUMİ QAYDASIDIR):** JSX-də `{() => <Comp/>}` KİMİ RENDER FUNKSİYASI İÇİNDƏ TƏZƏDƏN-TƏZƏDƏN EYNİ FORMADA YAZILAN İNLİNE FUNKSİYALAR/KOMPONENTLƏR, HƏR RENDERDƏ "YENİ" SAYILIR — VƏ ƏGƏR REACT BUNU BİR KOMPONENT TİPİ KİMİ İSTİFADƏ EDİRSƏ (BİZİM VƏZİYYƏTİMİZDƏ, tanstack-in `flexRender`-İ VASİTƏSİLƏ), NƏTİCƏ TAM REMOUNT OLUR. **BU CÜR BUQLAR ÇOX VAXT "GİZLİ" QALIR** — ÇÜNKİ `ColumnHeader`/`DateColumnHeader` (Status/Tarix/Subtotal filtrləri) ÜÇÜN DƏ EYNİ MEXANİZM AKTİVDİR (ONLARIN `header:` FUNKSİYALARI DA EYNİ `useMemo`-DAN GƏLİR), SADƏCƏ TƏK-KLİKLƏ SEÇİLƏN CHECKBOX/TƏQVİM İNTERAKSİYALARINDA REMOUNT O QƏDƏR "GÖRÜNMÜR" — DAVAMLI YAZI (typing) KİMİ, ART-ARDA ÇOX SAYDA RENDER TƏLƏB EDƏN İNTERAKSİYALARDA İSƏ DƏRHAL ÜZƏ ÇIXIR.
+
+**İKİNCİ TƏLƏB — FİLTR YALNIZ Enter-Lə TƏTBİQ OLUNSUN:** İSTİFADƏÇİ SONRADAN ƏLAVƏ İSTƏDİ Kİ, YAZARKƏN CƏDVƏL "CANLI" FİLTRLƏNMƏSİN — YALNIZ **Enter** BASILANDA. Ona görə `onChange`/`setCountFilter` (VƏ ONUNLA BİRLİKDƏ, TANSTACK-IN ÖZ `getFilteredRowModel`-İ) YALNIZ INPUTUN `onKeyDown`-UNDA, `e.key === 'Enter'` OLANDA ÇAĞIRILIR (`applyAndClose`, EYNİ ZAMANDA POPOVER-İ DƏ BAĞLAYIR) — SADƏ `onChange`-DƏ YOX. "Təmizlə" DÜYMƏSİ İSTİSNADIR: O, DƏRHAL `onChange('')` ÇAĞIRIR, ÇÜNKİ TƏMİZLƏMƏK ARTIQ AYDIN, TƏKLİK BİR HƏRƏKƏTDİR.
+
+---
 
 **`table/components/DateColumnHeader.tsx` + `DateFilterCalendar.tsx` — tarix filtri, VƏ `React.lazy` ilə bir bundle-ölçüsü optimallaşdırması:**
 ```tsx
@@ -3681,6 +3735,20 @@ import { USER_ROLE_LABELS } from '@/lib/constants/userRole'
 <span className={styles.roleBadge}>{USER_ROLE_LABELS[user.role] ?? user.role}</span>
 ```
 İLK VERSİYADA BURADA BİRBAŞA `{user.role}` YAZILIRDI — YƏNİ, CƏDVƏLDƏ XAM, İNGİLİSCƏ `"ADMIN"`/`"COMMERCE"` DƏYƏRLƏRİ GÖRÜNÜRDÜ, HALBUKİ BÜTÜN DİGƏR SƏHİFƏLƏRDƏ (STATUS, MƏHSUL NÖVÜ VƏ S.) HƏR ŞEY AZƏRBAYCANCA ETİKƏTLƏNMİŞDİ. Hissə 11-DƏ İZAH OLUNAN `USER_ROLE_LABELS` LÜĞƏTİ ƏLAVƏ EDİLİB, VƏ CƏDVƏLDƏ (HƏM DƏ DETAL MODALINDA) `USER_ROLE_LABELS[user.role] ?? user.role` YAZILIB — `?? user.role` "TƏHLÜKƏSİZLİK ŞƏBƏKƏSİDİR" (Hissə 2-DƏKİ NULLISH COALESCING): LÜĞƏTDƏ TAPILMAYAN (NƏZƏRİ) BİR ROL GƏLSƏ, HEÇ OLMASA XAM DƏYƏR GÖRÜNSÜN, BOŞ EKRAN YOX.
+
+**Avatar-da PROFİL ŞƏKLİ (sonradan əlavə edilən bir xüsusiyyət):** ƏVVƏLCƏ, `UsersTable.tsx`-in Avatar XANASI (VƏ `UserDetails.tsx`-in DETAL BAŞLIĞI) HƏMİŞƏ ADIN BİRİNCİ HƏRFİNİ (`user.initial`) YAŞIL DAİRƏNİN İÇİNDƏ GÖSTƏRİRDİ — HEÇ VAXT HƏQİQİ ŞƏKİL YOX İDİ:
+```tsx
+<span className={styles.avatar} style={{ backgroundColor: user.color }}>
+  {user.imageUrl ? (
+    <img src={resizeThumbnailUrl(user.imageUrl, 80)} alt="" width={40} height={40} loading="lazy" decoding="async" className={styles.avatarImg} />
+  ) : (
+    user.initial
+  )}
+</span>
+```
+- **NİYƏ `shared/components/Thumbnail` (Hissə 14) İŞLƏDİLMİR, ONUN ƏVƏZİNƏ MÖVCUD `.avatar` `<span>`-A BİRBAŞA `<img>` ƏLAVƏ OLUNUB?** `Thumbnail` KVADRAT-FORMALI ŞƏKİLLƏR ÜÇÜN QURULUB (`border-radius: var(--radius-sm/md)` — Categories/Products/Campaigns-in DÖRDBUCAQLI ŞƏKİLLƏRİ), Users-in AVATARI İSƏ HƏMİŞƏ DAİRƏ OLUB (`border-radius: 999px`) — `Thumbnail`-I ZORLA İŞLƏTMƏK BU DAİRƏ FORMASINI POZARDI. ONA GÖRƏ, YENİ KOMPONENT QURMAQ ƏVƏZİNƏ, MÖVCUD `.avatar`/`.detailAvatar` `<span>`-IN ÖZÜNƏ ŞƏRTİ (`user.imageUrl ? ... : ...`) BİR `<img>` ƏLAVƏ OLUNUB — CSS-Ə İSƏ SADƏCƏ `overflow: hidden` ƏLAVƏ OLUNUB (KİÇİK, AMMA VACİB DETAL: BUNSUZ, `<img>` DÜZBUCAQLI OLDUĞU ÜÇÜN, DAİRƏNİN KİNARLARINDAN "DAŞARDI").
+- **`resizeThumbnailUrl(user.imageUrl, 80)`** — Hissə 14-DƏKİ EYNİ FUNKSİYA: EKRANDA GÖRÜNƏN ÖLÇÜ 40px OLDUĞU ÜÇÜN, RETİNA EKRANLAR ÜÇÜN `80` (40 × 2) SORĞULANIR — CLOUDFLARE-İN ÖZ ŞƏKİL-KİÇİLTMƏ XİDMƏTİNƏ, LAZIM OLANDAN BÖYÜK (600×400) ŞƏKİL ENDİRMƏMƏK ÜÇÜN.
+- **`user.imageUrl ? <img .../> : user.initial`** — Hissə 2-DƏKİ TERNAR OPERATORUN TİPİK BİR NÜMUNƏSİ: ŞƏKİL VARSA GÖSTƏR, YOXDURSA (`null` — Hissə 5-dəki `User.imageUrl: string | null` TİPİNƏ BAXIN) KÖHNƏ HƏRF+RƏNG DAİRƏSİNƏ "GERİ DÜŞ" (fallback).
 
 ---
 
@@ -3795,6 +3863,21 @@ export default defineConfig({
 - **BUNUN FAYDASI NƏDİR?** `react`, `axios` KİMİ KİTABXANALAR ÇOX-ÇOX NADİR HALLARDA DƏYİŞİR (YALNIZ `npm update` EDƏNDƏ) — TƏTBİQİN ÖZ KODU İSƏ (BİR SƏHİFƏYƏ KİÇİK BİR DÜZƏLİŞ ETSƏNİZ BELƏ) TEZ-TEZ DƏYİŞİR. ƏGƏR HAMISI TƏK BİR FAYLDA OLSAYDI, KİÇİK BİR DƏYİŞİKLİK BELƏ, İSTİFADƏÇİNİN BRAUZERİNİN BÜTÜN O BÖYÜK FAYLI (VENDOR KİTABXANALAR DAXİL) YENİDƏN ENDİRMƏSİNƏ SƏBƏB OLARDI (BRAUZER KEŞLƏMƏSİ "SINARDI"). İNDİ, VENDOR CHUNK AYRI OLDUĞU ÜÇÜN, TƏTBİQİN ÖZ KODU DƏYİŞƏNDƏ BRAUZER YALNIZ O KİÇİK CHUNK-I YENİDƏN ENDİRİR, VENDOR CHUNK-I ARTIQ KEŞDƏN İSTİFADƏ EDİR (`npm run build` NƏTİCƏSİNDƏ BU, REALDA ÖLÇÜLÜB: APP-KOD CHUNK-I 287 KB-DAN 60 KB-A DÜŞDÜ, VENDOR ÖZÜ 303 KB OLARAQ AYRI QALDI).
 - **NİYƏ FUNKSİYA FORMASI, `{ vendor: [...] }` OBYEKT FORMASI YOX?** Klassik Rollup (ƏNƏNƏVİ VERSİYA) `manualChunks: { vendor: ['react', 'axios'] }` KİMİ SADƏ BİR OBYEKT DƏ QƏBUL EDİR — AMMA BU LAYİHƏNİN VITE VERSİYASI **Rolldown** (Rollup-un YENİ, DAHA SÜRƏTLİ, Rust-DA YAZILMIŞ ALTERNATİVİ) ÜZƏRİNDƏ QURULUB, VƏ O, YALNIZ FUNKSİYA FORMASINI QƏBUL EDİR (OBYEKT FORMASI VERSƏNİZ, `TypeError: manualChunks is not a function` XƏTASI VERİR) — ONA GÖRƏ BURADA MƏHZ FUNKSİYA YAZILIB.
 
+
+### `vercel.json` — DEPLOYMENT (Vercel), VƏ "SPA" TƏTBİQLƏRİN KLASSİK BİR PROBLEMİ
+
+```json
+{
+  "rewrites": [{ "source": "/(.*)", "destination": "/index.html" }]
+}
+```
+
+**PROBLEM NƏ İDİ:** Bu tətbiq bir **SPA**-DIR (Single Page Application) — REAL OLARAQ SERVERDƏ `/sifarisler`, `/istifadeciler` KİMİ AYRI-AYRI SƏHİFƏ FAYLLARI **YOXDUR**, HAMISI TƏK `index.html`-İ YÜKLƏYİR, SONRA `react-router-dom`-UN `BrowserRouter`-İ BROWSER-İN ÖZ TARİXÇƏSİNƏ (`history` API-sinə) BAXARAQ, HANSI SƏHİFƏNİN GÖSTƏRİLƏCƏYİNƏ **JavaScript İLƏ, KLİENT TƏRƏFDƏ** QƏRAR VERİR (Hissə 7-Ə BAXIN). Bu, `<Link>` İLƏ SƏHİFƏ-DAXİLİ NAVİQASİYA ÜÇÜN PROBLEM DEYİL (HEÇ VAXT HƏQİQİ BİR HTTP SORĞUSU GETMİR). AMMA İSTİFADƏÇİ `/sifarisler`-DƏ İKƏN SƏHİFƏNİ **YENİLƏSƏ** (F5) VƏ YA BU LİNKİ BİRBAŞA BROWSER-Ə YAPIŞDIRSA, BROWSER HƏQİQİ BİR HTTP SORĞUSU (`GET /sifarisler`) GÖNDƏRİR — VERCEL-İN ÖZÜ İSƏ, BELƏ BİR FAYL/ROUTE **TAPMADIĞI ÜÇÜN**, `react-router-dom`-UN İŞƏ DÜŞMƏSİNƏ HEÇ FÜRSƏT VERMƏDƏN, ÖZ 404 SƏHİFƏSİNİ QAYTARIRDI.
+
+**HƏLL:** `vercel.json`-DAKI `rewrites` QAYDASI, VERCEL-Ə DEYİR: "**HANSI PATH GƏLİRSƏ GƏLSİN** (`/(.*)` — İSTƏNİLƏN MƏTN ÜÇÜN UYĞUN GƏLƏN REGEX), HƏMİŞƏ `/index.html`-İ QAYTAR". BELƏLİKLƏ, `/sifarisler`-Ə BİRBAŞA GEDƏN BİR SORĞU DA, HƏMİŞƏ ƏSL `index.html`-İ (VƏ ONUNLA BİRLİKDƏ, TƏTBİQİN BÜTÜN JS-İNİ) ALIR — VƏ ARTIQ `BrowserRouter` İŞƏ DÜŞÜB, `/sifarisler` PATH-İNİ ÖZÜ OXUYUB, DOĞRU SƏHİFƏNİ GÖSTƏRİR.
+
+- **BU YALNIZ YENİ BİR DEPLOY-DAN SONRA İŞLƏYİR** — `vercel.json` Vite-İN ÖZÜNDƏ YOX, VERCEL-İN BUILD/DEPLOY MƏRHƏLƏSİNDƏ OXUNUR. LOKAL `npm run dev`/`npm run preview`-Ə HEÇ BİR TƏSİRİ YOXDUR (Vite-in ÖZ DEV SERVERİ ARTIQ BÜTÜN PATH-LƏRİ `index.html`-Ə YÖNLƏNDİRİR, BU FAYL OLMASA BELƏ).
+- BU, "SPA ROUTING" DEYİLƏN, REACT/Vue/Angular KİMİ HƏR SPA ÇƏRÇİVƏSİNİN QARŞILAŞDIĞI ÜMUMİ BİR PROBLEMDİR — HƏLL DƏ EYNİ ÜMUMİ NÜMUNƏDİR (Netlify-də `_redirects`, Nginx-də `try_files`, Vercel-də İSƏ MƏHZ BU `rewrites`).
 
 ### `tsconfig.json`
 
