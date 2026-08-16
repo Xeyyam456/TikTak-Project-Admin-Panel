@@ -27,7 +27,8 @@ export default function AdminLayout() {
         <div className={`flex items-stretch gap-6 ${styles.bodyInner}`}>
           <Sidebar />
           <main className={`flex flex-col ${styles.main}`}>
-            <Outlet context={{ search: debouncedSearch } satisfies LayoutOutletContext} />
+           
+            <Outlet context={{ search: debouncedSearch.trim() } satisfies LayoutOutletContext} />
           </main>
         </div>
       </div>

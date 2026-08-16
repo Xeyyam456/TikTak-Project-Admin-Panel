@@ -2,7 +2,7 @@ import { useMemo } from 'react'
 import type { ColumnHelper } from '@tanstack/react-table'
 import { ORDER_STATUS_OPTIONS } from '@/lib/constants/orderStatus'
 import type { OrderStatus } from '@/lib/constants/orderStatus'
-import type { Order, SortKey, SortState, CountBucket, ShippingBucket } from '@/types/order'
+import type { Order, SortKey, SortState, ShippingBucket } from '@/types/order'
 import { columnLabel } from '@/pages/Protected/Orders/table/components/columnLabel'
 import { dateHeader, countHeader, subtotalHeader, statusHeader } from '@/pages/Protected/Orders/table/components/headerRenderers'
 import { countCell, subtotalCell, statusCell, actionCell } from '@/pages/Protected/Orders/table/components/cellRenderers'
@@ -15,8 +15,7 @@ interface UseOrderColumnDefsParams {
   setStatusFilter: (next: Set<OrderStatus>) => void
   dateFilter: string
   setDateFilter: (next: string) => void
-  countFilter: Set<CountBucket>
-  setCountFilter: (next: Set<CountBucket>) => void
+  setCountFilter: (next: string) => void
   shippingFilter: Set<ShippingBucket>
   setShippingFilter: (next: Set<ShippingBucket>) => void
   sort: SortState
@@ -34,7 +33,6 @@ export function useOrderColumnDefs({
   setStatusFilter,
   dateFilter,
   setDateFilter,
-  countFilter,
   setCountFilter,
   shippingFilter,
   setShippingFilter,
@@ -65,7 +63,10 @@ export function useOrderColumnDefs({
       }),
       columnHelper.accessor((o) => o.itemCount, {
         id: 'count',
-        header: () => countHeader(countFilter, setCountFilter, sort, toggleSort),
+        // Deliberately excludes countFilter's own value from this closure/the
+        // memo's deps below — CountColumnHeader owns its typed value locally
+        // now (see its own comment) specifically so typing doesn't remount it.
+        header: () => countHeader(setCountFilter, sort, toggleSort),
         cell: (info) => countCell(info.row.original),
         filterFn: countFilterFn,
         sortingFn: 'basic',
@@ -94,6 +95,6 @@ export function useOrderColumnDefs({
         meta: { width: 100 },
       }),
     ],
-    [columnHelper, statusFilter, dateFilter, countFilter, shippingFilter, sort, onView],
+    [columnHelper, statusFilter, dateFilter, shippingFilter, sort, onView],
   )
 }

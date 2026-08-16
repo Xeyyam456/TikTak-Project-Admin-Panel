@@ -1,9 +1,10 @@
 import { ORDER_STATUS_LABELS, ORDER_STATUS_OPTIONS } from '@/lib/constants/orderStatus'
 import type { OrderStatus } from '@/lib/constants/orderStatus'
-import type { SortState, SortKey, CountBucket, ShippingBucket } from '@/types/order'
+import type { SortState, SortKey, ShippingBucket } from '@/types/order'
 import { ColumnHeader } from './ColumnHeader'
 import { DateColumnHeader } from './DateColumnHeader'
-import { COUNT_BUCKETS, SHIPPING_BUCKETS } from '@/pages/Protected/Orders/utils/filters'
+import { CountColumnHeader } from './CountColumnHeader'
+import { SHIPPING_BUCKETS } from '@/pages/Protected/Orders/utils/filters'
 
 export const dateHeader = (
   value: string,
@@ -21,15 +22,12 @@ export const dateHeader = (
 )
 
 export const countHeader = (
-  value: Set<CountBucket>,
-  onChange: (next: Set<CountBucket>) => void,
+  onChange: (next: string) => void,
   sort: SortState,
   toggleSort: (key: SortKey) => void,
 ) => (
-  <ColumnHeader
+  <CountColumnHeader
     label="Məhsul sayı"
-    options={COUNT_BUCKETS}
-    value={value}
     onChange={onChange}
     sortDir={sort?.key === 'count' ? sort.dir : null}
     onSortClick={() => toggleSort('count')}

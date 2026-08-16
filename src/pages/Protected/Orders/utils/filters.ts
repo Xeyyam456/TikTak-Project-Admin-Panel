@@ -1,13 +1,6 @@
 import type { FilterFn } from '@tanstack/react-table'
-import type { Order, CountBucket, ShippingBucket } from '@/types/order'
+import type { Order, ShippingBucket } from '@/types/order'
 import type { OrderStatus } from '@/lib/constants/orderStatus'
-
-export const COUNT_BUCKETS: readonly CountBucket[] = ['1-5', '6-10', '10+']
-export const matchesCountBucket = (count: number, bucket: CountBucket) => {
-  if (bucket === '1-5') return count >= 1 && count <= 5
-  if (bucket === '6-10') return count >= 6 && count <= 10
-  return count >= 11
-}
 
 export const SHIPPING_BUCKETS: readonly ShippingBucket[] = ['Pulsuz', 'Ödənişli']
 export const matchesShipping = (freeShipping: boolean, bucket: ShippingBucket) =>
@@ -46,8 +39,9 @@ export const dateFilterFn: FilterFn<Order> = (row, _columnId, filterValue: strin
 export const statusFilterFn: FilterFn<Order> = (row, _columnId, filterValue: Set<OrderStatus>) =>
   filterValue.size === 0 || filterValue.has(row.original.status)
 
-export const countFilterFn: FilterFn<Order> = (row, _columnId, filterValue: Set<CountBucket>) =>
-  filterValue.size === 0 || [...filterValue].some((b) => matchesCountBucket(row.original.itemCount, b))
+// Exact match against the entered number — "" means no filter applied.
+export const countFilterFn: FilterFn<Order> = (row, _columnId, filterValue: string) =>
+  filterValue === '' || row.original.itemCount === Number(filterValue)
 
 export const shippingFilterFn: FilterFn<Order> = (row, _columnId, filterValue: Set<ShippingBucket>) =>
   filterValue.size === 0 || [...filterValue].some((b) => matchesShipping(row.original.freeShipping, b))

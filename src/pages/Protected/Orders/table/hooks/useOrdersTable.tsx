@@ -9,7 +9,7 @@ import {
   type SortingState,
 } from '@tanstack/react-table'
 import type { OrderStatus } from '@/lib/constants/orderStatus'
-import type { Order, SortKey, SortState, CountBucket, ShippingBucket } from '@/types/order'
+import type { Order, SortKey, SortState, ShippingBucket } from '@/types/order'
 import type { Column } from '@/types/common'
 import { globalFilterFn } from '@/pages/Protected/Orders/utils/filters'
 import { useOrderColumnDefs } from './useOrderColumnDefs'
@@ -18,7 +18,7 @@ import { buildColumnMeta } from '@/pages/Protected/Orders/table/columns'
 export function useOrdersTable(orders: Order[], search: string, onView: (id: number) => void) {
   const [statusFilter, setStatusFilter] = useState<Set<OrderStatus>>(new Set())
   const [dateFilter, setDateFilter] = useState('')
-  const [countFilter, setCountFilter] = useState<Set<CountBucket>>(new Set())
+  const [countFilter, setCountFilter] = useState('')
   const [shippingFilter, setShippingFilter] = useState<Set<ShippingBucket>>(new Set())
   const [sort, setSort] = useState<SortState>(null)
 
@@ -38,7 +38,6 @@ export function useOrdersTable(orders: Order[], search: string, onView: (id: num
     setStatusFilter,
     dateFilter,
     setDateFilter,
-    countFilter,
     setCountFilter,
     shippingFilter,
     setShippingFilter,

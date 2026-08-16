@@ -10,6 +10,12 @@
   background: #22c55e;
 }
 
+.avatarImg {
+  height: 100%;
+  width: 100%;
+  object-fit: cover;
+}
+
 .nameCell {
   font-weight: 500;
   color: var(--color-text);

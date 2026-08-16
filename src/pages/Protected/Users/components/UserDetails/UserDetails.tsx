@@ -1,6 +1,7 @@
 import { MapPin, Phone } from 'lucide-react'
 import Modal from '@/shared/components/Modal'
 import { USER_ROLE_LABELS } from '@/lib/constants/userRole'
+import { resizeThumbnailUrl } from '@/utils/ResizeThumbnailUrl'
 import type { UserDetailsProps } from '@/types/user'
 import styles from '@/pages/Protected/Users/styles/UserDetails.module.css'
 
@@ -10,8 +11,20 @@ export default function UserDetails({ user, onClose }: UserDetailsProps) {
       {user && (
         <div>
           <div className={`flex items-center gap-3 ${styles.hero}`}>
-            <span className={`flex items-center justify-center ${styles.detailAvatar}`} style={{ backgroundColor: user.color }}>
-              {user.initial}
+            <span className={`flex items-center justify-center overflow-hidden ${styles.detailAvatar}`} style={{ backgroundColor: user.color }}>
+              {user.imageUrl ? (
+                <img
+                  src={resizeThumbnailUrl(user.imageUrl, 112)}
+                  alt=""
+                  width={56}
+                  height={56}
+                  loading="lazy"
+                  decoding="async"
+                  className={styles.detailAvatarImg}
+                />
+              ) : (
+                user.initial
+              )}
             </span>
             <div>
               <div className={styles.detailName}>{user.name}</div>
