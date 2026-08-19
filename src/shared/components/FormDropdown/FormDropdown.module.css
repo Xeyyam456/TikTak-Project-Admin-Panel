@@ -36,8 +36,15 @@
 
 .menu {
   z-index: 100;
+  /* Trigger-in eni ilə eyni (bax: FormDropdown.tsx-in inline `width` stili) —
+     modal-ın özündən enli olmasın deyə eyni dəyəri `max-width`/`box-sizing`
+     ilə də sərtləşdiririk, yoxsa uzun kateqoriya adı və ya Radix-in kolliziya
+     düzəlişi onu bu ölçüdən kənara çıxara bilər. */
+  max-width: var(--radix-dropdown-menu-trigger-width);
   max-height: 260px;
+  overflow-x: hidden;
   overflow-y: auto;
+  box-sizing: border-box;
   background: var(--color-white);
   border-radius: var(--radius-sm);
   box-shadow: var(--shadow-md);
@@ -50,6 +57,8 @@
   padding: 8px 12px;
   font-size: 14px;
   color: var(--color-text);
+  white-space: normal;
+  word-break: break-word;
   outline: none;
   transition: background 0.15s;
 }
