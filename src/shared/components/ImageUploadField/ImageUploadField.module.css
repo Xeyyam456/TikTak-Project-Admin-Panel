@@ -1,3 +1,66 @@
 .wrap {
-  flex-wrap: wrap;
+  width: 100%;
+}
+
+/* Şəkil seçilməyəndə bu blok ümumiyyətlə render olunmur (bax: ImageUploadField.tsx),
+   ona görə margin-top yalnız real önizləmə göründükdə tətbiq olunur. Modal-ın
+   header sətri (bağlama X düyməsi) ~44px hündürlükdə (card padding + ikon +
+   margin-bottom) — margin-top bundan çox mənfi olarsa, bu blok DOM-da header-dən
+   sonra gəldiyi üçün onun üstünə "boyanır" və X-in kliklərini tutur (real bug,
+   sınanıb) — -16px hələ də yuxarı qaldırır, amma header-in sərhədinə çatmır. */
+.preview {
+  width: 80px;
+  height: 80px;
+  margin-top: -16px;
+  margin-bottom: 10px;
+  border-radius: var(--radius-sm);
+  background: var(--color-subtle-bg);
+  overflow: hidden;
+  flex-shrink: 0;
+}
+
+.previewImg {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.inputWrap {
+  position: relative;
+}
+
+.hasLeadingIcon {
+  padding-left: 78px;
+}
+
+.hasTrailingIcon {
+  padding-right: 40px;
+}
+
+.leadingIconBtn {
+  position: absolute;
+  left: 6px;
+  z-index: 1;
+  gap: 4px;
+  border-right: 1px solid var(--color-border-strong);
+  padding: 6px 10px 6px 6px;
+  font-size: 13px;
+  color: var(--color-text-faint);
+}
+
+.leadingIconBtn:hover {
+  color: var(--color-green);
+}
+
+.trailingIconBtn {
+  position: absolute;
+  right: 6px;
+  border: none;
+  background: none;
+  padding: 6px;
+  color: var(--color-text-faint);
+}
+
+.trailingIconBtn:hover {
+  color: var(--color-red-text);
 }

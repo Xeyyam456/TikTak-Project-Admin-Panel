@@ -22,9 +22,7 @@ export default function CategoryForm({ open, onClose, editing, defaultValues, su
   return (
     <Modal open={open} onClose={onClose}>
       <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col gap-4">
-        <FormField label="Şəkil">
-          <ImageUploadField value={watch('imageUrl')} onChange={(url) => setValue('imageUrl', url, { shouldDirty: true })} />
-        </FormField>
+        <ImageUploadField value={watch('imageUrl')} onChange={(url) => setValue('imageUrl', url, { shouldDirty: true })} />
         <FormField label="Ad">
           <FormInput {...register('name', { required: true })} />
         </FormField>

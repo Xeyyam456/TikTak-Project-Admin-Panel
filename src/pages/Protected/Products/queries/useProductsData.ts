@@ -19,11 +19,15 @@ export function useProductsData(search: string) {
     queryFn: () => listCategories().then((data) => data.map(mapCategoryFromApi)),
   })
 
+  // Son yaradılan (ən böyük id) ən başda görünsün deyə — backend siyahını
+  // yaradılma sırası ilə (köhnədən yeniyə) qaytarır.
   const filtered = useMemo(
     () =>
-      products.filter((p) =>
-        `${p.name} ${p.description} ${p.category?.name ?? ''}`.toLocaleLowerCase('az').includes(search.toLocaleLowerCase('az')),
-      ),
+      products
+        .filter((p) =>
+          `${p.name} ${p.description} ${p.category?.name ?? ''}`.toLocaleLowerCase('az').includes(search.toLocaleLowerCase('az')),
+        )
+        .sort((a, b) => b.id - a.id),
     [products, search],
   )
 

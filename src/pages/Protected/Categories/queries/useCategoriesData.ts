@@ -10,11 +10,13 @@ export function useCategoriesData(search: string) {
     queryFn: () => listCategories().then((data) => data.map(mapCategoryFromApi)),
   })
 
+  // Son yaradılan (ən böyük id) ən başda görünsün deyə — backend siyahını
+  // yaradılma sırası ilə (köhnədən yeniyə) qaytarır.
   const filtered = useMemo(
     () =>
-      categories.filter((c) =>
-        `${c.name} ${c.description}`.toLocaleLowerCase('az').includes(search.toLocaleLowerCase('az')),
-      ),
+      categories
+        .filter((c) => `${c.name} ${c.description}`.toLocaleLowerCase('az').includes(search.toLocaleLowerCase('az')))
+        .sort((a, b) => b.id - a.id),
     [categories, search],
   )
 

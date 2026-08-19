@@ -10,11 +10,13 @@ export function useCampaignsData(search: string) {
     queryFn: () => listCampaigns().then((data) => data.map(mapCampaignFromApi)),
   })
 
+  // Son yaradılan (ən böyük id) ən başda görünsün deyə — backend siyahını
+  // yaradılma sırası ilə (köhnədən yeniyə) qaytarır.
   const filtered = useMemo(
     () =>
-      campaigns.filter((c) =>
-        `${c.title} ${c.description}`.toLocaleLowerCase('az').includes(search.toLocaleLowerCase('az')),
-      ),
+      campaigns
+        .filter((c) => `${c.title} ${c.description}`.toLocaleLowerCase('az').includes(search.toLocaleLowerCase('az')))
+        .sort((a, b) => b.id - a.id),
     [campaigns, search],
   )
 
