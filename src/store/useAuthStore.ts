@@ -1,6 +1,7 @@
 import { create } from 'zustand'
 import { loginAdmin } from '@/services/authService'
 import { getAccessToken, getStoredProfile, saveSession, clearSession } from '@/lib/auth/session'
+import { resetSessionExpiryNotice } from '@/services/axiosInstance'
 import type { AuthState } from '@/types/auth'
 
 export const useAuthStore = create<AuthState>((set) => ({
@@ -10,6 +11,7 @@ export const useAuthStore = create<AuthState>((set) => ({
   login: async (phone, password) => {
     const data = await loginAdmin({ phone, password })
     saveSession(data)
+    resetSessionExpiryNotice()
     set({ profile: data.profile, isAuthenticated: true })
   },
 

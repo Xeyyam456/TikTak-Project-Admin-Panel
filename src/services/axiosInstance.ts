@@ -55,6 +55,18 @@ function getErrorMessage(error: AxiosError, isLogin?: boolean): string {
   return STATUS_MESSAGES[error.response.status] || 'Xəta baş verdi'
 }
 
+// Sessiya bitəndə eyni anda bir neçə sorğu (məs. Orders-in `orders`/`orderStats`
+// query-ləri) paralel 401 alır — hər biri öz reject-ini atır və queryClient-in
+// qlobal onError-u hər reject üçün toast göstərir, nəticədə "Sessiya bitib" iki
+// dəfə görünür. Bu flag bir sessiya-bitmə hadisəsində yalnız BİRİNCİ reject-ə
+// real mesaj verir, qalanları boş mesajla reject olunur (queryClient boş
+// mesajı toast etmir) — flag növbəti uğurlu login-də sıfırlanır.
+let sessionExpiryNotified = false
+
+export function resetSessionExpiryNotice(): void {
+  sessionExpiryNotified = false
+}
+
 let refreshPromise: Promise<AuthTokens> | null = null
 
 function refreshAccessToken(): Promise<AuthTokens> {
@@ -84,12 +96,18 @@ const handleError = async (error: AxiosError) => {
       await refreshAccessToken()
       return api(original)
     } catch {
+      const alreadyNotified = sessionExpiryNotified
+      sessionExpiryNotified = true
       clearSession()
       useAuthStore.getState().logout()
+      return Promise.reject(new Error(alreadyNotified ? '' : getErrorMessage(error, original.skipAuthRetry)))
     }
   } else if (isUnauthorized && !original.skipAuthRetry) {
+    const alreadyNotified = sessionExpiryNotified
+    sessionExpiryNotified = true
     clearSession()
     useAuthStore.getState().logout()
+    return Promise.reject(new Error(alreadyNotified ? '' : getErrorMessage(error, original.skipAuthRetry)))
   }
 
   return Promise.reject(new Error(getErrorMessage(error, original.skipAuthRetry)))
