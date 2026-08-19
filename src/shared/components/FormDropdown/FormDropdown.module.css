@@ -44,12 +44,19 @@
   max-height: 260px;
   overflow-x: hidden;
   overflow-y: auto;
+  /* `Table`/`Modal`-dakı skrol konteynerləri ilə eyni pattern — skrol bar
+     görünmür, amma tıraş/toxunma ilə skrol hələ də işləyir. */
+  scrollbar-width: none;
   box-sizing: border-box;
   background: var(--color-white);
   border-radius: var(--radius-sm);
   box-shadow: var(--shadow-md);
   border: 1px solid var(--color-border-strong);
   padding: 4px;
+}
+
+.menu::-webkit-scrollbar {
+  display: none;
 }
 
 .item {
