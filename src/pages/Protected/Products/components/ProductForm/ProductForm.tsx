@@ -6,12 +6,13 @@ import FormField from '@/shared/components/FormField'
 import FormInput from '@/shared/components/FormInput'
 import FormTextarea from '@/shared/components/FormTextarea'
 import FormSelect from '@/shared/components/FormSelect'
+import ImageUploadField from '@/shared/components/ImageUploadField'
 import { PRODUCT_TYPE_LABELS, PRODUCT_TYPE_OPTIONS } from '@/lib/constants/productTypes'
 import type { ProductForm as ProductFormValues, ProductFormProps } from '@/types/product'
 import styles from '@/pages/Protected/Products/styles/ProductForm.module.css'
 
 export default function ProductForm({ open, onClose, editing, defaultValues, submitting, categoryOptions, onSubmit }: ProductFormProps) {
-  const { register, handleSubmit, reset } = useForm<ProductFormValues>({ defaultValues })
+  const { register, handleSubmit, reset, watch, setValue } = useForm<ProductFormValues>({ defaultValues })
 
   // react-hook-form only reads `defaultValues` once, on mount — reset it
   // explicitly whenever the modal (re)opens so switching between "create" and
@@ -23,8 +24,8 @@ export default function ProductForm({ open, onClose, editing, defaultValues, sub
   return (
     <Modal open={open} onClose={onClose} wide>
       <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col gap-4">
-        <FormField label="Şəkil ünvanı">
-          <FormInput placeholder="https://..." {...register('imageUrl')} />
+        <FormField label="Şəkil">
+          <ImageUploadField value={watch('imageUrl')} onChange={(url) => setValue('imageUrl', url, { shouldDirty: true })} />
         </FormField>
         <FormField label="Ad">
           <FormInput {...register('name', { required: true })} />

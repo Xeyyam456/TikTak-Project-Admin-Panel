@@ -5,11 +5,12 @@ import Button from '@/shared/components/Button'
 import FormField from '@/shared/components/FormField'
 import FormInput from '@/shared/components/FormInput'
 import FormTextarea from '@/shared/components/FormTextarea'
+import ImageUploadField from '@/shared/components/ImageUploadField'
 import type { CampaignForm as CampaignFormValues, CampaignFormProps } from '@/types/campaign'
 import styles from '@/pages/Protected/Campaigns/styles/CampaignForm.module.css'
 
 export default function CampaignForm({ open, onClose, editing, defaultValues, submitting, onSubmit }: CampaignFormProps) {
-  const { register, handleSubmit, reset } = useForm<CampaignFormValues>({ defaultValues })
+  const { register, handleSubmit, reset, watch, setValue } = useForm<CampaignFormValues>({ defaultValues })
 
   // react-hook-form only reads `defaultValues` once, on mount — reset it
   // explicitly whenever the modal (re)opens so switching between "create" and
@@ -21,8 +22,8 @@ export default function CampaignForm({ open, onClose, editing, defaultValues, su
   return (
     <Modal open={open} onClose={onClose}>
       <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col gap-4">
-        <FormField label="Şəkil ünvanı">
-          <FormInput placeholder="https://..." {...register('imageUrl')} />
+        <FormField label="Şəkil">
+          <ImageUploadField value={watch('imageUrl')} onChange={(url) => setValue('imageUrl', url, { shouldDirty: true })} />
         </FormField>
         <FormField label="Başlıq">
           <FormInput {...register('title', { required: true })} />

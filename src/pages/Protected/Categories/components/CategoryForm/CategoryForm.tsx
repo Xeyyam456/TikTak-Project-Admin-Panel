@@ -5,11 +5,12 @@ import Button from '@/shared/components/Button'
 import FormField from '@/shared/components/FormField'
 import FormInput from '@/shared/components/FormInput'
 import FormTextarea from '@/shared/components/FormTextarea'
+import ImageUploadField from '@/shared/components/ImageUploadField'
 import type { CategoryForm as CategoryFormValues, CategoryFormProps } from '@/types/category'
 import styles from '@/pages/Protected/Categories/styles/CategoryForm.module.css'
 
 export default function CategoryForm({ open, onClose, editing, defaultValues, submitting, onSubmit }: CategoryFormProps) {
-  const { register, handleSubmit, reset } = useForm<CategoryFormValues>({ defaultValues })
+  const { register, handleSubmit, reset, watch, setValue } = useForm<CategoryFormValues>({ defaultValues })
 
   // react-hook-form only reads `defaultValues` once, on mount — reset it
   // explicitly whenever the modal (re)opens so switching between "create" and
@@ -21,8 +22,8 @@ export default function CategoryForm({ open, onClose, editing, defaultValues, su
   return (
     <Modal open={open} onClose={onClose}>
       <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col gap-4">
-        <FormField label="Şəkil ünvanı">
-          <FormInput placeholder="https://..." {...register('imageUrl')} />
+        <FormField label="Şəkil">
+          <ImageUploadField value={watch('imageUrl')} onChange={(url) => setValue('imageUrl', url, { shouldDirty: true })} />
         </FormField>
         <FormField label="Ad">
           <FormInput {...register('name', { required: true })} />
