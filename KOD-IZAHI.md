@@ -689,7 +689,7 @@ src/
 │   ├── auth/             → localStorage-da token saxlamaq/oxumaq
 │   ├── constants/         → Sabit dəyərlər (enum → Azərbaycan dilində etiket xəritələri)
 │   └── queryClient.ts     → TanStack Query-nin konfiqurasiyası
-├── utils/              → `Pagination` komponenti, `formatDate` funksiyası, `resizeThumbnailUrl` funksiyası
+├── utils/              → `Pagination` komponenti, `formatDate` funksiyası, `resizeThumbnailUrl` funksiyası, `compressImage` funksiyası (şəkli yükləməzdən əvvəl brauzerdə sıxır — Hissə 14-ə baxın)
 ├── assets/             → Şəkillər (login/delete illüstrasiyaları — `.webp`, aşağıda izah olunur)
 ├── index.css            → Bütün rənglər/ölçülər üçün CSS dəyişənləri (design token-lar) + qaranlıq rejim override-ları
 └── vite-env.d.ts        → Vite-in öz tipləri + `.env` dəyişənlərinin tipi + CSS Modules tipi (Hissə 20-yə baxın)
@@ -1216,6 +1216,7 @@ Bu, **zustand** ilə qurulmuş "qlobal state"dir. Zustand-ı belə düşünün: 
 import { create } from 'zustand'
 import { loginAdmin } from '@/services/authService'
 import { getAccessToken, getStoredProfile, saveSession, clearSession } from '@/lib/auth/session'
+import { resetSessionExpiryNotice } from '@/services/axiosInstance'
 import type { AuthState } from '@/types/auth'
 
 export const useAuthStore = create<AuthState>((set) => ({
@@ -1225,6 +1226,7 @@ export const useAuthStore = create<AuthState>((set) => ({
   login: async (phone, password) => {
     const data = await loginAdmin({ phone, password })
     saveSession(data)
+    resetSessionExpiryNotice()
     set({ profile: data.profile, isAuthenticated: true })
   },
 
@@ -1261,7 +1263,7 @@ export interface AuthState {
 13. `create<AuthState>((set) => ({ ... }))` — **`<AuthState>`** BURADA, Hissə 3-DƏ İZAH OLUNAN GENERİK SİNTAKSİSDİR: `create` FUNKSİYASINA "BU STORE-UN FORMASI DƏQİQ `AuthState`-DİR" DEYİRİK. Bunun NƏTİCƏSİ: `set({...})` ÇAĞIRANDA, YA DA `useAuthStore((s) => s.isAuthenticated)` YAZANDA, TypeScript DƏQIQ BİLİR Kİ, HANSI SAHƏLƏR VAR, HANSI YOXDUR — SƏHVƏN OLMAYAN BİR SAHƏ (`useAuthStore((s) => s.profil)` — "profil" SƏHV YAZILIB, DOĞRUSU "profile") YAZSANIZ, TypeScript DƏRHAL TUTAR.
 14. `profile: getStoredProfile()` — store YARADILAN ANDA (səhifə ilk açılanda) `localStorage`-dan profili oxuyub başlanğıc dəyər kimi qoyur. Beləliklə, səhifəni yeniləsəniz (F5) belə, login "yadda qalır".
 15. `isAuthenticated: !!getAccessToken()` — `!!` iki dəfə "yox" (NOT) işarəsidir, İSTƏNİLƏN dəyəri `true`/`false`-a çevirmək üçün trik: `getAccessToken()` bir string ("...") ya da `null` qaytarır; `!null` → `true`, `!"..."` → `false`, sonra bir daha `!` vuraraq: `!!null` → `false`, `!!"..."` → `true`. Yəni "token varsa `true`, yoxdursa `false`".
-17-21. `login` — `async` funksiyadır (içində `await` var). `loginAdmin` (servis funksiyası, aşağıda) çağırılır, cavab gözlənilir, `saveSession` ilə `localStorage`-a yazılır, sonra `set({...})` ilə store-un CARİ vəziyyəti YENİLƏNİR — bu, bütün `useAuthStore`-a abunə olmuş komponentləri (`RequireAuth`, `Sidebar` və s.) AVTOMATİK yenidən render etdirir. **DİQQƏT:** `login: async (phone, password) => {...}` YAZILIB, PARAMETRLƏRƏ AYRICA `: string` YAZILMAYIB — ÇÜNKİ TypeScript ARTIQ YUXARIDAKI `interface AuthState`-DƏN "BİLİR" Kİ, `login`-İN İKİ STRİNG PARAMETRİ VAR (BU, "KONTEKSTUAL TİP" ADLANIR — TypeScript, BİR YERDƏ TİP TƏYİN EDİLİBSƏ, ONU TƏKRAR-TƏKRAR YAZDIRMIR).
+17-21. `login` — `async` funksiyadır (içində `await` var). `loginAdmin` (servis funksiyası, aşağıda) çağırılır, cavab gözlənilir, `saveSession` ilə `localStorage`-a yazılır, **SONRA `resetSessionExpiryNotice()` (SONRADAN ƏLAVƏ OLUNUB — `axiosInstance.ts`-dən idxal olunur, Hissə 9-un "SONRADAN ƏLAVƏ OLUNAN" bölməsinə baxın) ÇAĞIRILIR** — BU, "SESSİYA BİTİB" BİLDİRİŞİNİN İKİ DƏFƏ GÖRÜNMƏSİNİN QARŞISINI ALAN FLAG-I SIFIRLAYIR, ÇÜNKİ YENİ BİR LOGİN, YENİ BİR SESSİYA DEMƏKDİR — BUNDAN SONRA GƏLƏCƏK NÖVBƏTİ SESSİYA-BİTMƏ HADİSƏSİ ARTIQ ÖZ BİLDİRİŞİNİ ALMALIDIR, ƏVVƏLKİ HADİSƏDƏN "YADDA QALMIŞ" FLAG SƏBƏBİNDƏN SUSDURULMAMALIDIR — SONDA `set({...})` ilə store-un CARİ vəziyyəti YENİLƏNİR — bu, bütün `useAuthStore`-a abunə olmuş komponentləri (`RequireAuth`, `Sidebar` və s.) AVTOMATİK yenidən render etdirir. **DİQQƏT:** `login: async (phone, password) => {...}` YAZILIB, PARAMETRLƏRƏ AYRICA `: string` YAZILMAYIB — ÇÜNKİ TypeScript ARTIQ YUXARIDAKI `interface AuthState`-DƏN "BİLİR" Kİ, `login`-İN İKİ STRİNG PARAMETRİ VAR (BU, "KONTEKSTUAL TİP" ADLANIR — TypeScript, BİR YERDƏ TİP TƏYİN EDİLİBSƏ, ONU TƏKRAR-TƏKRAR YAZDIRMIR).
 23-26. `logout` — `clearSession()` ilə `localStorage` təmizlənir, `set({...})` ilə store-da `profile: null, isAuthenticated: false` qoyulur.
 29-34. **Tab-lar arası sinxronizasiya** — `window.addEventListener('storage', ...)` brauzerin xüsusi bir hadisəsinə (event) qulaq asır. `storage` event-i YALNIZ o zaman atılır ki, `localStorage` BAŞQA BİR TAB-DA dəyişsin (öz tab-ınızda dəyişəndə SİZDƏ atılmır, digər açıq tab-larda atılır). Yəni: bir tab-da "Çıxış" etsəniz, digər açıq tab bunu bu listener vasitəsilə eşidir və öz `isAuthenticated`-ini də `false`-a çevirir → o tab-dakı `RequireAuth` da dərhal `/login`-ə yönləndirir.
 
@@ -1435,6 +1437,12 @@ Bu funksiya, access token-in VAXTI keçəndə YENİSİNİ almaq üçündür (bac
 - `return refreshPromise` — bu, EGƏR yeni sorğu başladılıbsa, ONU; YOX, ARTIQ davam edən vardısa, O DAVAM edəni qaytarır.
 
 ```ts
+let sessionExpiryNotified = false
+
+export function resetSessionExpiryNotice(): void {
+  sessionExpiryNotified = false
+}
+
 const handleError = async (error: AxiosError) => {
   const original = error.config as InternalAxiosRequestConfig
   const isUnauthorized = error.response?.status === 401
@@ -1446,12 +1454,18 @@ const handleError = async (error: AxiosError) => {
       await refreshAccessToken()
       return api(original)
     } catch {
+      const alreadyNotified = sessionExpiryNotified
+      sessionExpiryNotified = true
       clearSession()
       useAuthStore.getState().logout()
+      return Promise.reject(new Error(alreadyNotified ? '' : getErrorMessage(error, original.skipAuthRetry)))
     }
   } else if (isUnauthorized && !original.skipAuthRetry) {
+    const alreadyNotified = sessionExpiryNotified
+    sessionExpiryNotified = true
     clearSession()
     useAuthStore.getState().logout()
+    return Promise.reject(new Error(alreadyNotified ? '' : getErrorMessage(error, original.skipAuthRetry)))
   }
 
   return Promise.reject(new Error(getErrorMessage(error, original.skipAuthRetry)))
@@ -1461,6 +1475,20 @@ api.interceptors.response.use(handleSuccess, handleError)
 
 export default api as unknown as UnwrappedApi
 ```
+
+**◆ SONRADAN ƏLAVƏ OLUNAN: NİYƏ "SESSİYA BİTİB" BİLDİRİŞİ BƏZƏN İKİ DƏFƏ GÖRÜNÜRDÜ VƏ NECƏ DÜZƏLDİLDİ?**
+
+Bu, real bir bug idi — HİPOTETİK deyil. Bəzi səhifələr (məs. `Orders`, HİSSƏ 18-Ə BAXIN) EYNİ ANDA BİRDƏN ARTIQ sorğu göndərir (`['orders']` VƏ `['orderStats']`, İKİ AYRI `useQuery`). SESSİYA HƏQİQƏTƏN bitəndə (access token vaxtı keçib, refresh DƏ uğursuz olanda), O İKİ sorğunun HƏR BİRİ ÖZ 401 XƏTASINI ALIR VƏ `handleError` FUNKSİYASI HƏR BİRİ ÜÇÜN AYRI-AYRI İŞƏ DÜŞÜR.
+
+- `refreshPromise` (yuxarıda izah olundu) YALNIZ REFRESH SORĞUSUNUN ÖZÜNÜN TƏKRARLANMASININ QARŞISINI ALIR — YƏNİ BACKEND-Ə YALNIZ BİR DƏFƏ `/auth/refresh` GEDİR. AMMA O REFRESH UĞURSUZ OLANDA (`catch` BLOKU), BU BLOK, ONU GÖZLƏYƏN HƏR SORĞU ÜÇÜN AYRICA İŞƏ DÜŞÜR — YƏNİ İKİ PARALEL SORĞU VARSA, `clearSession()` + `logout()` İKİ DƏFƏ ÇAĞIRILIR (ZƏRƏRSİZDİR, ÇÜNKİ İKİSİ DƏ EYNİ NƏTİCƏNİ VERİR) VƏ, DAHA VACİBİ, `Promise.reject(new Error('Sessiya bitib...'))` DƏ İKİ DƏFƏ İŞƏ DÜŞÜR.
+- `src/lib/queryClient.ts`-DƏKİ QLOBAL `QueryCache`/`MutationCache`-in `onError`-U İSƏ, HƏR REJECT OLUNAN SORĞU/MUTASİYA ÜÇÜN AYRI-AYRI `toast.error(err.message)` ÇAĞIRIR (Hissə 13-ə BAXIN) — YƏNİ İKİ AYRI REJECT = EKRANDA İKİ EYNİ "Sessiya bitib, yenidən daxil olun" BİLDİRİŞİ, ÜST-ÜSTƏ.
+
+**Düzəliş, İKİ HİSSƏDƏN İBARƏTDİR:**
+
+1. **`sessionExpiryNotified` FLAG-I** (`let sessionExpiryNotified = false`, MODUL SƏVİYYƏSİNDƏ — Hissə 2-DƏKİ "MODUL SƏVİYYƏSİNDƏ DƏYİŞƏN" MƏNTİQİNƏ BAXIN, FAYL BİR DƏFƏ YÜKLƏNİR, BU DƏYİŞƏN BÜTÜN ÇAĞIRIŞLAR ARASINDA "YADDA QALIR"): logout-a gedən İKİ BLOKUN HƏR BİRİNDƏ, ƏVVƏLCƏ `const alreadyNotified = sessionExpiryNotified` İLƏ CARİ DƏYƏRİ OXUYUR, SONRA `sessionExpiryNotified = true` YAZIR. YƏNİ: BİR SESSİYA-BİTMƏ HADİSƏSİNDƏ İLK ÇAĞIRIŞDA `alreadyNotified` `false`-DUR (DEMƏLİ REAL MESAJ GEDİR), AMMA EYNİ HADİSƏNİN İKİNCİ (VƏ SONRAKI) PARALEL ÇAĞIRIŞLARINDA ARTIQ `true`-DUR — O ZAMAN `Promise.reject(new Error(alreadyNotified ? '' : getErrorMessage(...)))` **BOŞ STRİNG** İLƏ REJECT EDİR.
+2. **`queryClient.ts`-in `onError`-U DƏYİŞDİRİLDİ**: ƏVVƏLKİ `toast.error(err.message)` (ŞƏRTSİZ) ƏVƏZİNƏ, İNDİ `if (err.message) toast.error(err.message)` — YƏNİ BOŞ MESAJLA REJECT OLUNAN XƏTALAR ÜÇÜN HEÇ BİR TOAST GÖSTƏRİLMİR. Boş string `''` JavaScript-də "falsy"-dir (Hissə 2-YƏ BAXIN), ONA GÖRƏ `if (err.message)` SADƏCƏ BOŞ OLMAYAN MESAJLARDA `true` OLUR.
+
+**FLAG NÖVBƏTİ DƏFƏ NECƏ SIFIRLANIR?** `resetSessionExpiryNotice()` ADLI, AYRICA EXPORT OLUNAN BİR FUNKSİYA VAR — ONU `src/store/useAuthStore.ts`-İN `login()` FUNKSİYASI, UĞURLU LOGIN-DƏN DƏRHAL SONRA (`saveSession(data)`-DAN SONRA) ÇAĞIRIR. **NİYƏ MƏHZ LOGİN ANI?** Çünki YENİ BİR LOGİN, HƏQİQƏTƏN "YENİ BİR SESSİYA" DEMƏKDİR — BUNDAN SONRA GƏLƏCƏK NÖVBƏTİ 401 (MƏS. BİR NEÇƏ SAAT SONRA, TOKEN YENİDƏN VAXTI KEÇƏNDƏ) ARTIQ YENİ, MÜSTƏQİL BİR HADİSƏDİR VƏ ÖZ BİLDİRİŞİNİ ALMALIDIR — FLAG-I VAXT ƏSASLI (MƏS. "10 SANİYƏDƏN SONRA SIFIRLA") SIFIRLAMAQ SƏHV OLARDI, ÇÜNKİ BU, HƏQİQİ HADİSƏNİN "NƏ VAXT BİTDİYİNİ" DEYİL, SADƏCƏ TƏXMİNİ BİR RƏQƏMİ ƏSAS GÖTÜRƏRDİ.
 
 Bu, "response interceptor"-un XƏTA hissəsidir — HƏR sorğu XƏTA (400, 401, 404, 500 və s.) ilə qayıdanda BU funksiya işə düşür.
 
@@ -1786,10 +1814,10 @@ export const queryClient = new QueryClient({
     queries: { staleTime: 15_000 },
   },
   queryCache: new QueryCache({
-    onError: (err) => toast.error(err.message),
+    onError: (err) => { if (err.message) toast.error(err.message) },
   }),
   mutationCache: new MutationCache({
-    onError: (err) => toast.error(err.message),
+    onError: (err) => { if (err.message) toast.error(err.message) },
   }),
 })
 ```
@@ -1797,8 +1825,9 @@ export const queryClient = new QueryClient({
 **Sətir-sətir:**
 - `new QueryClient({...})` — `new` ACHAR SÖZÜ ilə BİR "SİNİF"DƏN (class) YENİ BİR OBYEKT (instans) YARADILIR — `QueryClient` BÜTÜN CACHE-i VƏ AYARLARI SAXLAYAN "BEYİNDİR".
 - `defaultOptions.queries.staleTime: 15_000` — `15_000` = 15000 (JavaScript-də ƏDƏDLƏRİN İÇİNDƏ `_` OXUNUŞU ASANLAŞDIRMAQ ÜÇÜN İŞLƏDİLİR, HEÇ BİR RİYAZİ MƏNASI YOXDUR — sadəcə 15000 MİLLİSANİYƏ = 15 SANİYƏ). `staleTime` — BİR DATA ÇƏKİLDİKDƏN SONRA NƏ QƏDƏR MÜDDƏT "TƏZƏ" (fresh) SAYILSIN. 15 SANİYƏ ƏRZİNDƏ EYNİ SƏHİFƏYƏ GERİ QAYITSANIZ, YENİDƏN SORĞU GETMİR, CACHE-DƏKİ DATA GÖSTƏRİLİR.
-- `queryCache: new QueryCache({ onError: (err) => toast.error(err.message) })` — BÜTÜN `useQuery` (data OXUMA) sorğuları ÜÇÜN QLOBAL BİR XƏTA-TUTUCU. İSTƏNİLƏN SƏHİFƏDƏ İSTƏNİLƏN `useQuery` XƏTA VERSƏ, BU FUNKSİYA İŞƏ DÜŞÜR, `toast.error(...)` İLƏ BİLDİRİŞ GÖSTƏRİR — HƏR SƏHİFƏDƏ AYRI-AYRI XƏTA İDARƏ ETMƏYƏ EHTİYAC QALMIR. **DİQQƏT — BURADA `err.message` YAZILIB, `err instanceof Error ? ... : ...` YOX** (`Login/hooks/useLoginForm.ts`-DƏKİNDƏN FƏRQLİ OLARAQ): BUNUN SƏBƏBİ, `err`-İN TİPİNİN BURADA (TANSTACK QUERY-NİN ÖZ TİPLƏRİNƏ GÖRƏ) ARTIQ `unknown` YOX, BİRBAŞA `Error` KİMİ "İNFER" OLUNMASIDIR (TanStack Query-nin DAXİLİ TİPLƏRİ, `DefaultError = Error` DEYƏ SABİTLƏŞDİRİB) — Hissə 3-DƏKİ `catch (err)` MİSALINDAN FƏRQLİ OLARAQ, BURADA ƏLAVƏ DARALTMAYA EHTİYAC YOXDUR.
-- `mutationCache: new MutationCache({ onError: ... })` — EYNİ MƏNTİQ, AMMA `useMutation` (data YAZMA — yaratma/yeniləmə/silmə) ÜÇÜN.
+- `queryCache: new QueryCache({ onError: (err) => { if (err.message) toast.error(err.message) } })` — BÜTÜN `useQuery` (data OXUMA) sorğuları ÜÇÜN QLOBAL BİR XƏTA-TUTUCU. İSTƏNİLƏN SƏHİFƏDƏ İSTƏNİLƏN `useQuery` XƏTA VERSƏ, BU FUNKSİYA İŞƏ DÜŞÜR, `toast.error(...)` İLƏ BİLDİRİŞ GÖSTƏRİR — HƏR SƏHİFƏDƏ AYRI-AYRI XƏTA İDARƏ ETMƏYƏ EHTİYAC QALMIR. **DİQQƏT — BURADA `err.message` YAZILIB, `err instanceof Error ? ... : ...` YOX** (`Login/hooks/useLoginForm.ts`-DƏKİNDƏN FƏRQLİ OLARAQ): BUNUN SƏBƏBİ, `err`-İN TİPİNİN BURADA (TANSTACK QUERY-NİN ÖZ TİPLƏRİNƏ GÖRƏ) ARTIQ `unknown` YOX, BİRBAŞA `Error` KİMİ "İNFER" OLUNMASIDIR (TanStack Query-nin DAXİLİ TİPLƏRİ, `DefaultError = Error` DEYƏ SABİTLƏŞDİRİB) — Hissə 3-DƏKİ `catch (err)` MİSALINDAN FƏRQLİ OLARAQ, BURADA ƏLAVƏ DARALTMAYA EHTİYAC YOXDUR.
+- **SONRADAN ƏLAVƏ OLUNAN `if (err.message)` YOXLAMASI** — ƏVVƏLCƏ BURADA ŞƏRTSİZ `toast.error(err.message)` VAR İDİ. `axiosInstance.ts`-Ə (Hissə 9-A BAXIN, "SONRADAN ƏLAVƏ OLUNAN" BÖLMƏSİ) SESSİYA-BİTMƏ HADİSƏSİNDƏ İKİ DƏFƏ TOAST GÖRÜNMƏ BUG-INI DÜZƏLTMƏK ÜÇÜN, EYNİ HADİSƏNİN TƏKRARLANAN (İKİNCİ VƏ SONRAKI) REJECT-LƏRİ ARTIQ **BOŞ STRİNG** (`''`) MESAJLA GƏLİR — BU YOXLAMA, BOŞ MESAJLI XƏTALAR ÜÇÜN TOAST GÖSTƏRMİR (BOŞ STRİNG JavaScript-DƏ "FALSY"DİR, Hissə 2-YƏ BAXIN). ADİ (BOŞ OLMAYAN) XƏTA MESAJLARINA BUNUN HEÇ BİR TƏSİRİ YOXDUR — ONLAR ƏVVƏLKİ KİMİ TOAST OLUNUR.
+- `mutationCache: new MutationCache({ onError: ... })` — EYNİ MƏNTİQ (VƏ EYNİ `if (err.message)` DÜZƏLİŞİ), AMMA `useMutation` (data YAZMA — yaratma/yeniləmə/silmə) ÜÇÜN.
 
 Bu `queryClient` obyekti `App.tsx`-də `<QueryClientProvider client={queryClient}>` İLƏ TƏTBİQƏ "TANIDILIR" (yuxarıda görmüşdük).
 
@@ -2062,16 +2091,16 @@ export function resizeThumbnailUrl(url: string, size: number): string {
 - **URL BU NÜMUNƏYƏ UYĞUN GƏLMİRSƏ (MƏS. BOŞ STRİNG, YA DA BAŞQA BİR SAYT-DAN GƏLƏN ADİ ŞƏKİL) NƏ OLUR?** `.replace()` HEÇ BİR UYĞUNLUQ TAPMASA, SADƏCƏ ORİJİNAL STRİNGİ DƏYİŞMƏDƏN QAYTARIR — YƏNİ, BU FUNKSİYA "TƏHLÜKƏSİZ"DİR, BAŞQA FORMATLI URL-LƏRƏ ZƏRƏR VERMİR.
 - **Fayl yolu VƏ QOVLUQ KONVENSİYASI**: `src/utils/ResizeThumbnailUrl/resizeThumbnailUrl.ts` (+ `index.ts`: `export { resizeThumbnailUrl } from './resizeThumbnailUrl'`) — Hissə 4/12-DƏ GÖRDÜYÜMÜZ EYNİ QOVLUQ QAYDASI (`Pagination/`, `FormatDate/` İLƏ EYNİ NÖV).
 
-### `FormField.tsx`, `FormInput.tsx`, `FormSelect.tsx`, `FormTextarea.tsx` — react-hook-form ilə birgə gələn 4 YENİ komponent
+### `FormField.tsx`, `FormInput.tsx`, `FormTextarea.tsx` — react-hook-form ilə birgə gələn KİÇİK komponentlər
 
-**HARADAN ÇIXDI BU DÖRDÜ?** `CategoryForm`/`ProductForm`/`CampaignForm`-un HƏR BİRİNDƏ, ƏVVƏLLƏR (Hissə 18-in köhnə "Categories.tsx" NÜMUNƏSİNDƏ GÖRDÜYÜNÜZ KİMİ), EYNİ 4-5 SƏTİRLİK NÜMUNƏ TƏKRARLANIRDI:
+**HARADAN ÇIXDI BUNLAR?** `CategoryForm`/`ProductForm`/`CampaignForm`-un HƏR BİRİNDƏ, ƏVVƏLLƏR (Hissə 18-in köhnə "Categories.tsx" NÜMUNƏSİNDƏ GÖRDÜYÜNÜZ KİMİ), EYNİ 4-5 SƏTİRLİK NÜMUNƏ TƏKRARLANIRDI:
 ```tsx
 <label className="flex flex-col gap-2">
   Ad
   <input value={form.name} onChange={(e) => setForm((f) => ({ ...f, name: e.target.value }))} required className={styles.input} />
 </label>
 ```
-FORMALAR `useState`-DƏN **react-hook-form**-A KEÇİRİLƏNDƏ (AŞAĞIDA, Hissə 18-DƏ, `CategoryForm.tsx`-İN TAM İZAHINA BAXIN), BU NÜMUNƏ DƏYİŞDİ, AMMA YENƏ ÜÇ FORMADA TƏKRARLANDI — ONA GÖRƏ, "LABEL + INPUT ÇÜTÜ" (`FormField` + `FormInput`), "LABEL + SELECT ÇÜTÜ" (`FormField` + `FormSelect`) VƏ "LABEL + TEXTAREA ÇÜTÜ" (`FormField` + `FormTextarea`) DÖRD KİÇİK, TƏKRAR İSTİFADƏ OLUNAN KOMPONENTƏ ÇIXARILDI:
+FORMALAR `useState`-DƏN **react-hook-form**-A KEÇİRİLƏNDƏ (AŞAĞIDA, Hissə 18-DƏ, `CategoryForm.tsx`-İN TAM İZAHINA BAXIN), BU NÜMUNƏ DƏYİŞDİ, AMMA YENƏ ÜÇ FORMADA TƏKRARLANDI — ONA GÖRƏ, "LABEL + INPUT ÇÜTÜ" (`FormField` + `FormInput`) VƏ "LABEL + TEXTAREA ÇÜTÜ" (`FormField` + `FormTextarea`) KİÇİK, TƏKRAR İSTİFADƏ OLUNAN KOMPONENTLƏRƏ ÇIXARILDI (**BİR ÜÇÜNCÜSÜ, `FormSelect`, ƏVVƏLLƏR BURADA VAR İDİ — İNDİ SİLİNİB, AŞAĞIDA `FormDropdown` BÖLMƏSİNƏ BAXIN**):
 
 ```tsx
 // FormField.tsx — sadəcə <label> + label mətni + içindəki hər-nə-olsa (children)
@@ -2090,11 +2119,176 @@ export default function FormInput({ className = '', type = 'text', ...rest }: Fo
   return <input type={type} className={`${styles.input} ${className}`} {...rest} />
 }
 ```
-- **`FormField` NİYƏ AYRI, `FormInput`-UN ÖZÜNƏ BİRLƏŞDİRİLMƏYİB?** Çünki `FormField`, `FormInput`/`FormSelect`/`FormTextarea`-DAN HƏR HANSI BİRİNİN "ÜSTÜNDƏ" İŞLƏYİR (`children` PROP-U İLƏ — Hissə 2-Ə BAXIN) — BİR `FormField`, İÇİNDƏ EYNİ DƏRƏCƏDƏ RAHATLIQLA `<FormInput>`, `<FormSelect>` VƏ YA `<FormTextarea>` SAXLAYA BİLİR. Bunları TƏK BİR (MƏS. YALNIZ INPUT ÜÇÜN) KOMPONENTƏ BİRLƏŞDİRSƏYDİK, SELECT/TEXTAREA ÜÇÜN YENİDƏN "LABEL YAZMA" MƏNTİQİNİ TƏKRARLAMALI OLARDIQ.
-- **`FormInput`/`FormSelect`/`FormTextarea` — NİYƏ `ComponentPropsWithRef<'input'>` (VƏ S.) TİPİNDƏN, ÖZ ƏLAVƏ PROP-U OLMADAN?** Hissə 3-dəki `ComponentPropsWithRef`-ə baxın — bu komponentlərin YEGANƏ VƏZİFƏSİ, HTML elementinin ÜZƏRİNƏ TƏK bir `styles.input`/`styles.select`/`styles.textarea` KLASI ƏLAVƏ ETMƏKDİR, QALAN HƏR ŞEY (`value`, `onChange`, HƏTTA react-hook-form-un `register(...)`-İN QAYTARDIĞI `ref`/`onBlur`/`name` DAXİL) `...rest` İLƏ OLDUĞU KİMİ ÖTÜRÜLÜR — Button-DA GÖRDÜYÜMÜZ EYNİ NÜMUNƏ (Hissə 14-ün yuxarısına baxın).
-- **`register('name', { required: true })` NECƏ İŞLƏYİR BUNLARLA BİRLİKDƏ?** `register(...)`, react-hook-form-un QAYTARDIĞI OBYEKTDİR (`{ name, onChange, onBlur, ref }`) — `<FormInput {...register('imageUrl')} />` YAZILANDA, BU DÖRD SAHƏ `FormInput`-UN `...rest`-İNƏ DÜŞÜR VƏ BİRBAŞA `<input>`-A ÖTÜRÜLÜR. YƏNİ, `FormInput`-UN ÖZÜ REACT-HOOK-FORM-DAN TAMAMİLƏ XƏBƏRSİZDİR (heç bir react-hook-form idxalı YOXDUR) — bu, BİLƏRƏKDƏN BELƏDİR, Kİ `FormInput` GƏLƏCƏKDƏ REACT-HOOK-FORM-SUZ DA (SADƏ `value`/`onChange` İLƏ) İSTİFADƏ OLUNA BİLSİN.
+- **`FormField` NİYƏ AYRI, `FormInput`-UN ÖZÜNƏ BİRLƏŞDİRİLMƏYİB?** Çünki `FormField`, `FormInput`/`FormTextarea`-DAN (İNDİ DƏ `FormDropdown`-DAN, AŞAĞIYA BAXIN) HƏR HANSI BİRİNİN "ÜSTÜNDƏ" İŞLƏYİR (`children` PROP-U İLƏ — Hissə 2-Ə BAXIN) — BİR `FormField`, İÇİNDƏ EYNİ DƏRƏCƏDƏ RAHATLIQLA `<FormInput>`, `<FormTextarea>` VƏ YA `<FormDropdown>` SAXLAYA BİLİR. Bunları TƏK BİR (MƏS. YALNIZ INPUT ÜÇÜN) KOMPONENTƏ BİRLƏŞDİRSƏYDİK, TEXTAREA/DROPDOWN ÜÇÜN YENİDƏN "LABEL YAZMA" MƏNTİQİNİ TƏKRARLAMALI OLARDIQ.
+- **`FormInput`/`FormTextarea` — NİYƏ `ComponentPropsWithRef<'input'>` (VƏ S.) TİPİNDƏN, ÖZ ƏLAVƏ PROP-U OLMADAN?** Hissə 3-dəki `ComponentPropsWithRef`-ə baxın — bu komponentlərin YEGANƏ VƏZİFƏSİ, HTML elementinin ÜZƏRİNƏ TƏK bir `styles.input`/`styles.textarea` KLASI ƏLAVƏ ETMƏKDİR, QALAN HƏR ŞEY (`value`, `onChange`, HƏTTA react-hook-form-un `register(...)`-İN QAYTARDIĞI `ref`/`onBlur`/`name` DAXİL) `...rest` İLƏ OLDUĞU KİMİ ÖTÜRÜLÜR — Button-DA GÖRDÜYÜMÜZ EYNİ NÜMUNƏ (Hissə 14-ün yuxarısına baxın).
+- **`register('name', { required: true })` NECƏ İŞLƏYİR BUNLARLA BİRLİKDƏ?** `register(...)`, react-hook-form-un QAYTARDIĞI OBYEKTDİR (`{ name, onChange, onBlur, ref }`) — `<FormInput {...register('name')} />` YAZILANDA, BU DÖRD SAHƏ `FormInput`-UN `...rest`-İNƏ DÜŞÜR VƏ BİRBAŞA `<input>`-A ÖTÜRÜLÜR. YƏNİ, `FormInput`-UN ÖZÜ REACT-HOOK-FORM-DAN TAMAMİLƏ XƏBƏRSİZDİR (heç bir react-hook-form idxalı YOXDUR) — bu, BİLƏRƏKDƏN BELƏDİR, Kİ `FormInput` GƏLƏCƏKDƏ REACT-HOOK-FORM-SUZ DA (SADƏ `value`/`onChange` İLƏ) İSTİFADƏ OLUNA BİLSİN.
 
 **"BÖLMƏSƏYDİK NECƏ OLARDI?"** Hər formada `<input className={styles.input} {...register(...)} />` TƏKRARLAMAQ DA MÜMKÜN OLARDI (CƏMİ 3 FORMA VAR, TƏKRAR ÇOX BÖYÜK DEYİL) — AMMA BU DÖRD KOMPONENT ÇIXARILMASININ ƏSAS FAYDASI, GƏLƏCƏKDƏ (MƏS. 4-CÜ BİR FORMA ƏLAVƏ OLUNSA) EYNİ VİZUAL STİLİ (`.input`/`.select`/`.textarea` KLASLARI) TƏKRAR YAZMADAN ALMAQDIR — VƏ HANSISA GÜNÜ INPUT-LARIN ÜMUMİ GÖRÜNÜŞÜNÜ (MƏS. `border-radius`) DƏYİŞMƏK LAZIM GƏLSƏ, TƏK BİR YERİ (`FormInput.module.css`) DƏYİŞMƏK KİFAYƏT EDƏCƏK, ÜÇ AYRI FORMANI GƏZMƏYƏ EHTİYAC QALMAYACAQ.
+
+### `FormDropdown.tsx` — `FormSelect`-İ ƏVƏZ EDƏN, RADIX ƏSASLI, ÖZ-DİZAYN DROPDOWN
+
+**NİYƏ ORTAYA ÇIXDI?** `ProductForm`-DA `Növ` VƏ `Kateqoriya` SAHƏLƏRİ ƏVVƏLLƏR ADİ (nativ) `<select>` (`FormSelect` KOMPONENTİ VASİTƏSİLƏ) İDİ — BRAUZERİN ÖZ NATİV DROPDOWN-U (`<select><option>...`) ADƏTƏN LAYİHƏNİN DİGƏR HİSSƏLƏRİNDƏKİ (`ColumnHeader`, `Pagination`-IN SƏHİFƏ-ÖLÇÜSÜ SEÇİCİSİ) DİZAYNLA UYĞUNLAŞMIR (HƏR BRAUZER/ƏMƏLİYYAT SİSTEMİ ONU FƏRQLİ ÇİZİR, CSS İLƏ TAM STİLLƏNDİRİLƏ BİLMİR). ÇARƏ: LAYİHƏDƏ ARTIQ `Pagination`-IN SƏHİFƏ-ÖLÇÜSÜ SEÇİCİSİNDƏ VƏ `Orders`-İN `ColumnHeader`-İNDƏ İSTİFADƏ OLUNAN **`@radix-ui/react-dropdown-menu`** KİTABXANASINI (Hissə 1-DƏKİ TEXNOLOGİYALAR SİYAHISINA BAXIN) YENİDƏN İSTİFADƏ EDİB, `FormInput` İLƏ EYNİ GÖRÜNÜŞDƏ (padding/background/radius/fokus-border) BİR "TRIGGER" DÜYMƏ + AÇILAN SİYAHI QURMAQ.
+
+```tsx
+// src/shared/components/FormDropdown/FormDropdown.tsx
+import { useEffect, useRef, useState } from 'react'
+import * as DropdownMenu from '@radix-ui/react-dropdown-menu'
+import { ChevronDown } from 'lucide-react'
+import type { FormDropdownProps } from '@/types/shared'
+import styles from './FormDropdown.module.css'
+
+export default function FormDropdown({ value, onChange, options, placeholder = 'Seçin' }: FormDropdownProps) {
+  const triggerRef = useRef<HTMLButtonElement>(null)
+  const [boundary, setBoundary] = useState<HTMLElement | null>(null)
+
+  useEffect(() => {
+    setBoundary(triggerRef.current?.closest<HTMLElement>('[role="dialog"]') ?? null)
+  }, [])
+
+  const selected = options.find((o) => o.value === value)
+
+  return (
+    <DropdownMenu.Root>
+      <DropdownMenu.Trigger asChild>
+        <button ref={triggerRef} type="button" className={`flex items-center justify-between ${styles.trigger}`}>
+          <span className={selected ? '' : styles.placeholder}>{selected?.label ?? placeholder}</span>
+          <ChevronDown size={16} className={styles.chevron} />
+        </button>
+      </DropdownMenu.Trigger>
+      <DropdownMenu.Portal>
+        <DropdownMenu.Content
+          align="start"
+          sideOffset={4}
+          collisionBoundary={boundary}
+          collisionPadding={8}
+          className={styles.menu}
+          style={{ width: 'var(--radix-dropdown-menu-trigger-width)' }}
+        >
+          {options.map((o) => (
+            <DropdownMenu.Item
+              key={o.value}
+              onSelect={() => onChange(o.value)}
+              className={`cursor-pointer ${styles.item} ${o.value === value ? styles.itemActive : ''}`}
+            >
+              {o.label}
+            </DropdownMenu.Item>
+          ))}
+        </DropdownMenu.Content>
+      </DropdownMenu.Portal>
+    </DropdownMenu.Root>
+  )
+}
+```
+
+**Sətir-sətir:**
+- `FormDropdownProps` (`src/types/shared/FormDropdownProps.ts`) — `{ value: string; onChange: (value: string) => void; options: FormDropdownOption[]; placeholder?: string }`, HARADA `FormDropdownOption = { value: string; label: string }` (EYNİ FAYLDAN, TİP-YALNIZ, EXPORT OLUNUR — Hissə 5-DƏKİ `OrderInfoRowProps.ts`-İN `OrderInfoRowColor`-U EXPORT ETMƏSİ İLƏ EYNİ NÜMUNƏ).
+- `const [boundary, setBoundary] = useState<HTMLElement | null>(null)` + `useEffect(() => { setBoundary(triggerRef.current?.closest(...) ) }, [])` — **BU HİSSƏ ÇOX VACİBDİR, TƏSADÜFİ DEYİL**: `triggerRef.current`, KOMPONENT İLK DƏFƏ RENDER OLUNANDA HƏLƏ `null`-DUR (DOM ELEMENTİ HƏLƏ YARANMAYIB) — ONA GÖRƏ `boundary`-Nİ BİRBAŞA RENDER ZAMANI HESABLAMAQ OLMAZ, `useEffect` (RENDER-DƏN SONRA, DOM HAZIR OLANDA İŞƏ DÜŞƏN HOOK) İÇİNDƏ EDİLMƏLİDİR. `.closest('[role="dialog"]')` — DOM-DA "ÖZÜNDƏN YUXARI GEDƏRƏK, VERİLƏN SEÇİCİYƏ (selector) UYĞUN GƏLƏN İLK ƏCDADI TAP" DEMƏKDİR — `Modal.tsx`-in ÖZ `.card`-I MƏHZ `role="dialog"` ATRİBUTU DAŞIYIR (Hissə 14-ün Modal bölməsinə baxın), YƏNİ BU, "MƏNİ EHTİVA EDƏN MODAL PƏNCƏRƏSİNİ TAP" DEMƏKDİR.
+- **`collisionBoundary={boundary}` NİYƏ VAR?** Radix-in AÇILAN MENYUSU, DEFAULT OLARAQ, "KOLLİZİYA" (SIĞMAMA) YOXLAMASINI BRAUZERİN BÜTÜN VİEWPORT-UNA (EKRANIN ÖZÜNƏ) GÖRƏ APARIR — MODAL PƏNCƏRƏSİNƏ GÖRƏ YOX. NƏTİCƏ: MODAL EKRANIN ORTASINDA, ƏTRAFINDA HƏLƏ BOŞ YER (VIEWPORT-UN QALAN HİSSƏSİ) OLA-OLA, MENYU MODALDAN KƏNARA "DAŞA" BİLİRDİ (REAL, SINANMIŞ BUG). `collisionBoundary`-Nİ MODALIN ÖZÜNƏ (`boundary`) TƏYİN EDƏNDƏ, RADIX ARTIQ "MODALDAN KƏNARA ÇIXMASIN" DEYƏ HESABLAYIR — VƏ AŞAĞIDA YER OLMAYANDA (MODALIN ALT SƏRHƏDİNƏ YAXIN BİR SAHƏDƏ) AVTOMATİK OLARAQ **YUXARIDAN** AÇILIR (BU, RADIX-İN ÖZ DAXİLİ "FLIP" MƏNTİQİDİR — ƏLAVƏ KOD YAZMAĞA EHTİYAC YOXDUR, SADƏCƏ DÜZGÜN SƏRHƏDİ GÖSTƏRMƏK KİFAYƏTDİR).
+- `style={{ width: 'var(--radix-dropdown-menu-trigger-width)' }}` — Radix, AÇIQ OLAN VAXT, TRIGGER DÜYMƏNİN ÖZ ENİNİ BU CSS DƏYİŞƏNİNƏ (custom property) AVTOMATİK YAZIR — MENYUNUN ENİNİ TRIGGER-LƏ EYNİLƏŞDİRMƏK ÜÇÜN BUNU OXUMAQ KİFAYƏTDİR. CSS FAYLINDA (`FormDropdown.module.css`) BUNA ƏLAVƏ OLARAQ `max-width: var(--radix-dropdown-menu-trigger-width)` + `box-sizing: border-box` DA VAR — İKİLİK (redundancy) QƏSDƏNDİR: UZUN BİR SEÇİM MƏTNİ (MƏS. UZUN KATEQORİYA ADI) OLSA BELƏ, MENYU BU ÖLÇÜDƏN KƏNARA ÇIXA BİLMİR.
+- `DropdownMenu.Item`-in `onSelect={() => onChange(o.value)}` — RADIX-İN ÖZ `onSelect` HADİSƏSİDİR (ADİ HTML-İN `onClick`-İ DEYİL) — SEÇİM EDİLƏNDƏ MENYU AVTOMATİK BAĞLANIR VƏ `onChange` PROP-U (BİZİM KOMPONENTİN ÖZ PROP-U) ÇAĞIRILIR.
+- `ProductForm.tsx`-DA İSTİFADƏSİ (AŞAĞIDA GÖRƏCƏYİK) **`register`-LƏ YOX**, react-hook-form-un **`Controller`** KOMPONENTİ İLƏDİR — ÇÜNKİ `FormDropdown` NATİV BİR HTML FORM ELEMENTİ (`<input>`/`<select>`) DEYİL, ONA GÖRƏ `register(...)`-İN QAYTARDIĞI `ref`/`onChange`/`onBlur` BİRBAŞA ONA "YAPIŞDIRILA" BİLMİR — `Controller` MƏHZ BELƏ "XÜSUSİ" (custom) KOMPONENTLƏRİ react-hook-form-A BAĞLAMAQ ÜÇÜNDÜR.
+
+### `ImageUploadField.tsx` — LOKAL ŞƏKİL SEÇİB YÜKLƏMƏ + ƏL İLƏ LİNK YAZMA
+
+**NİYƏ ORTAYA ÇIXDI?** `Campaigns`/`Categories`/`Products`-un YARATMA/DÜZƏLİŞ FORMALARINDA, "Şəkil" SAHƏSİ ƏVVƏLLƏR SADƏCƏ BİR MƏTN INPUTU İDİ — ADMİN ŞƏKLİN LİNKİNİ ƏL İLƏ HARADANSA TAPIB YAPIŞDIRMALI İDİ. İNDİ ADMİN LOKAL KOMPÜTERİNDƏN BİR ŞƏKİL FAYLI SEÇƏ BİLİR, VƏ O FAYL AVTOMATİK OLARAQ BACKEND-Ə YÜKLƏNİB, QAYIDAN LİNK FORMAYA YAZILIR — YƏNİ ŞƏKLİN ÖZÜ (BİNAR/base64) HEÇ VAXT KATEQORİYA/MƏHSUL/KAMPANİYA YARATMA SORĞUSUNUN İÇİNƏ GETMİR, YALNIZ NƏTİCƏ LİNK GEDİR.
+
+```tsx
+// src/shared/components/ImageUploadField/ImageUploadField.tsx (qısaldılmış)
+import { useRef, type ChangeEvent } from 'react'
+import { useMutation } from '@tanstack/react-query'
+import { Upload, Trash2 } from 'lucide-react'
+import { uploadImage } from '@/services/uploadService'
+import { compressImage } from '@/utils/CompressImage'
+import { resizeThumbnailUrl } from '@/utils/ResizeThumbnailUrl'
+
+export default function ImageUploadField({ value, onChange }: ImageUploadFieldProps) {
+  const fileInputRef = useRef<HTMLInputElement>(null)
+
+  const { mutate, isPending } = useMutation({
+    mutationFn: async (file: File) => uploadImage(await compressImage(file)),
+    onSuccess: (data) => onChange(data.url),
+  })
+
+  const handlePick = (e: ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (file) mutate(file)
+    e.target.value = ''
+  }
+
+  return (
+    <div>
+      {value && <img src={resizeThumbnailUrl(value, 160)} width={80} height={80} alt="" />}
+      <input ref={fileInputRef} type="file" accept="image/*" onChange={handlePick} hidden />
+      <button type="button" onClick={() => fileInputRef.current?.click()} disabled={isPending}>Yüklə</button>
+      <input placeholder="https://..." value={value ?? ''} onChange={(e) => onChange(e.target.value)} disabled={isPending} readOnly={!!value} />
+      {value && <button type="button" onClick={() => onChange('')} disabled={isPending}><Trash2 /></button>}
+    </div>
+  )
+}
+```
+
+**Sətir-sətir (İKİ AYRI YOL, EYNİ NƏTİCƏ):**
+- **YOL 1 — ƏL İLƏ LİNK YAZMAQ:** `value`/`onChange` PROP-LARI VASİTƏSİLƏ, ORTADAKI MƏTN INPUTU ADİ, İDARƏ OLUNAN (controlled) BİR INPUTDUR — YAZDIĞINIZ HƏR HƏRF BİRBAŞA `onChange(e.target.value)` İLƏ FORMANIN ÖZ `imageUrl` SAHƏSİNƏ YAZILIR.
+- **YOL 2 — LOKAL FAYL SEÇMƏK:** `<input ref={fileInputRef} type="file" ... hidden />` — GİZLİ, GÖRÜNMƏYƏN BİR FAYL SEÇİCİSİ. "Yüklə" DÜYMƏSİ KLİKLƏNƏNDƏ, `fileInputRef.current?.click()` İLƏ BU GİZLİ INPUT PROQRAMLA "KLİKLƏNİR" — BRAUZERİN ÖZ FAYL SEÇMƏ PƏNCƏRƏSİ AÇILIR. FAYL SEÇİLƏNDƏ `handlePick` İŞƏ DÜŞÜR, `mutate(file)` ÇAĞIRIR.
+- `useMutation({ mutationFn: async (file) => uploadImage(await compressImage(file)), onSuccess: (data) => onChange(data.url) })` — Hissə 13-dəki `useMutation` NÜMUNƏSİNİN EYNİSİ, SADƏCƏ BURADA "YARADILAN ŞEY" BİR KATEQORİYA/MƏHSUL DEYİL, BİR **ŞƏKİL YÜKLƏMƏ NƏTİCƏSİDİR**. `mutationFn` İÇİNDƏ ƏVVƏLCƏ `compressImage(file)` (AŞAĞIDA, ÖZ BÖLMƏSİNDƏ İZAH OLUNUR) ÇAĞIRILIR, SONRA NƏTİCƏ (SIXILMIŞ FAYL) `uploadImage`-A (`src/services/uploadService.ts`, `POST /upload`, MULTIPART) VERİLİR. `onSuccess`-DƏ, BACKEND-DƏN QAYIDAN `{ url }`-DAKI `url`-U `onChange(data.url)` İLƏ FORMANIN `imageUrl` SAHƏSİNƏ YAZIR.
+- `isPending` — MUTASİYA HƏLƏ DAVAM EDİRSƏ `true` — BU MÜDDƏTDƏ "Yüklə" DÜYMƏSİ VƏ MƏTN INPUTU `disabled` OLUR, İNPUT `"Yüklənir..."` PLACEHOLDER GÖSTƏRİR (LOKAL FAYLIN ADINI YOX — BU, BİLƏRƏKDƏN BELƏDİR: ƏVVƏLKİ BİR VERSİYA FAYL ADINI GÖSTƏRİRDİ, AMMA BU, YÜKLƏMƏ BİTİB LİNKLƏ ƏVƏZ OLUNANDA QARIŞIQ BİR ARA-VƏZİYYƏT KİMİ GÖRÜNÜRDÜ).
+- `value && <img ... />` — ÖNİZLƏMƏ ŞƏKLİ (80×80, `resizeThumbnailUrl` İLƏ RETİNA ÜÇÜN 160px SORĞULANIR) **YALNIZ `value` VARSA** RENDER OLUNUR — BOŞ VAXT HEÇ NƏ GÖSTƏRİLMİR (ƏVVƏLKİ VERSİYA HƏMİŞƏ BOŞ BİR QUTU GÖSTƏRİRDİ, YER İTİRİRDİ).
+- `readOnly={!!value}` — LİNK ARTIQ VARSA, INPUT "OXUNUR, AMMA REDAKTƏ OLUNMUR" VƏZİYYƏTİNƏ KEÇİR (HƏLƏ DƏ SEÇİLƏ/KOPYALANA BİLƏR) — DƏYİŞMƏK ÜÇÜN ƏVVƏLCƏ TRASH DÜYMƏSİ İLƏ TƏMİZLƏMƏK LAZIMDIR.
+- `{value && <button onClick={() => onChange('')}><Trash2 /></button>}` — TRASH DÜYMƏSİ, `onChange('')` ÇAĞIRARAQ `value`-NU BOŞALDIR, İNPUT YENİDƏN REDAKTƏ OLUNA BİLƏN VƏZİYYƏTƏ QAYIDIR (HƏM ƏL İLƏ YAZMAQ, HƏM DƏ YENİ FAYL SEÇMƏK YENİDƏN MÜMKÜN OLUR).
+- **BUG DÜZƏLİŞİ, SƏNƏDLİK ÜÇÜN:** ÖNİZLƏMƏ ŞƏKLİNİN ÜSTÜNDƏKİ MƏNFİ `margin-top` (MODALIN BAĞLAMA DÜYMƏSİ İLƏ ARASINDAKI BOŞLUĞU AZALTMAQ ÜÇÜN) ÇOX BÖYÜK BİR MƏNFİ DƏYƏRLƏ (`-50px`) SINANANDA, ÖNİZLƏMƏ QUTUSU MODALIN BAĞLAMA (X) DÜYMƏSİNİN ÜSTÜNƏ "BOYANIR" VƏ ONUN KLİKLƏRİNİ TUTURDU (NORMAL AXINDA, DOM-DA SONRA GƏLƏN ELEMENT ƏVVƏLKİNİN ÜSTÜNƏ ÇƏKİLİR, `z-index`-Ə EHTİYAC OLMADAN) — DƏYƏR `-16px`-Ə ENDİRİLDİ.
+
+### `src/utils/CompressImage/compressImage.ts` — ŞƏKLİ YÜKLƏMƏZDƏN ƏVVƏL BRAUZERDƏ SIXMAQ
+
+**NİYƏ LAZIMDIR?** TELEFON KAMERASINDAN GƏLƏN ŞƏKİLLƏR ADƏTƏN BİRÖ NEÇƏ MEGABAYT VƏ MİNLƏRLƏ PİKSELDİR — AMMA EKRANDA HEÇ VAXT 80-56 PİKSELDƏN BÖYÜK GÖSTƏRİLMİR (`Thumbnail`/`ImageUploadField`-in ÖZ ÖNİZLƏMƏSİ). BELƏ BİR ŞƏKLİ OLDUĞU KİMİ (SIXILMADAN) BACKEND-Ə GÖNDƏRMƏK, HƏM YÜKLƏMƏ VAXTINI, HƏM DE BACKEND-DƏ SAXLANILAN FAYL ÖLÇÜSÜNÜ LÜZUMSUZ YERƏ ARTIRIR (Cloudflare-in ÖZ ŞƏKİL-KİÇİLTMƏSİ YALNIZ ŞƏKİL GÖSTƏRİLƏNDƏ İŞƏ DÜŞÜR, YÜKLƏNƏN VAXT YOX).
+
+```ts
+const MAX_DIMENSION = 1600
+const QUALITY = 0.85
+
+export function compressImage(file: File): Promise<File> {
+  return new Promise((resolve) => {
+    const objectUrl = URL.createObjectURL(file)
+    const img = new Image()
+
+    img.onload = () => {
+      URL.revokeObjectURL(objectUrl)
+      const scale = Math.min(1, MAX_DIMENSION / Math.max(img.width, img.height))
+      const width = Math.round(img.width * scale)
+      const height = Math.round(img.height * scale)
+
+      const canvas = document.createElement('canvas')
+      canvas.width = width
+      canvas.height = height
+      const ctx = canvas.getContext('2d')
+      if (!ctx) { resolve(file); return }
+      ctx.drawImage(img, 0, 0, width, height)
+
+      canvas.toBlob((blob) => {
+        if (!blob || blob.size >= file.size) { resolve(file); return }
+        const name = file.name.replace(/\.[^./]+$/, '') + '.webp'
+        resolve(new File([blob], name, { type: 'image/webp' }))
+      }, 'image/webp', QUALITY)
+    }
+
+    img.onerror = () => { URL.revokeObjectURL(objectUrl); resolve(file) }
+    img.src = objectUrl
+  })
+}
+```
+
+**Sətir-sətir:**
+- `compressImage(file: File): Promise<File>` — GİRİŞ ORİJİNAL FAYL, ÇIXIŞ (SONUNDA) YA SIXILMIŞ, YA DA (SIXMA FAYDASIZ OLARSA/XƏTA OLARSA) ORİJİNAL FAYLIN ÖZÜDÜR — ÇAĞIRAN TƏRƏF (`ImageUploadField`) İKİSİNİ FƏRQLƏNDİRMİR, HƏR HALDA BİR `File` ALIR.
+- `new Promise((resolve) => {...})` — Hissə 2-DƏKİ `Promise`-A BAXIN: BU FUNKSİYA `async`/`await` YOX, "ƏL İLƏ" (manual) BİR Promise QURUR, ÇÜNKİ İÇİNDƏKİ ƏMƏLİYYATLAR (`<img>` YÜKLƏMƏ, `canvas.toBlob`) ÖZLƏRİ Promise-BAZ DEYİL, HADİSƏ-ƏSASLI (event-based, `onload`/`onerror`/CALLBACK) API-LƏRDİR — `resolve(...)` MANUAL OLARAQ, HADİSƏ BAŞ VERƏNDƏ ÇAĞIRILIR.
+- `URL.createObjectURL(file)` — BRAUZER YADDAŞINDAKI (HƏLƏ HEÇ BİR SERVERƏ GETMƏMİŞ) FAYLA, MÜVƏQQƏTİ BİR "URL" (`blob:...`) VERİR — BUNU BİR `<img>`-İN `src`-İNƏ VERƏ BİLƏRİK, EYNİ ADİ ŞƏKİL KİMİ YÜKLƏNİR.
+- `img.onload = () => {...}` — ŞƏKİL BRAUZERDƏ (GÖRÜNMƏDƏN) YÜKLƏNİB HAZIR OLANDA İŞƏ DÜŞÜR — ANCAQ BU ANDA `img.width`/`img.height` (ORİJİNAL ÖLÇÜLƏR) MƏLUM OLUR.
+- `URL.revokeObjectURL(objectUrl)` — MÜVƏQQƏTİ URL-İ "LƏĞV EDİR", BRAUZER YADDAŞINI BOŞALDIR (İSTİFADƏ OLUNUB QURTARANDAN SONRA TƏMİZLƏMƏK YAXŞI TƏCRÜBƏDİR).
+- `const scale = Math.min(1, MAX_DIMENSION / Math.max(img.width, img.height))` — ŞƏKLİN EN/BOY NİSBƏTİNİ SAXLAYARAQ, ƏN BÖYÜK TƏRƏFİNİ 1600px-Ə ENDİRMƏK ÜÇÜN LAZIM OLAN "KİÇİLTMƏ ƏMSALINI" (scale factor) HESABLAYIR. `Math.min(1, ...)` — ƏGƏR ŞƏKİL ARTIQ 1600px-DƏN KİÇİKDİRSƏ, `scale` 1-DƏN BÖYÜK OLMASIN (YƏNİ KİÇİK ŞƏKLİ BÖYÜTMƏSİN).
+- `canvas.width = width; canvas.height = height; ctx.drawImage(img, 0, 0, width, height)` — GÖRÜNMƏYƏN (DOM-A ƏLAVƏ OLUNMAYAN) BİR `<canvas>` YARADIR, ŞƏKLİ ONUN ÜZƏRİNƏ, YENİ (KİÇİLDİLMİŞ) ÖLÇÜDƏ "ÇƏKİR" — CANVAS-IN ÖZÜ, HƏR PİKSELİ YENİDƏN HESABLAYARAQ KİÇİLTMƏNİ EDƏN BRAUZER API-SIDIR.
+- `canvas.toBlob((blob) => {...}, 'image/webp', QUALITY)` — CANVAS-IN ÜZƏRİNDƏKİ ŞƏKLİ, **WebP** FORMATINA, `0.85` KEYFİYYƏTLƏ (1-Ə YAXIN = YÜKSƏK KEYFİYYƏT/BÖYÜK FAYL, 0-A YAXIN = AŞAĞI KEYFİYYƏT/KİÇİK FAYL) YENİDƏN KODLAŞDIRIR — NƏTİCƏ BİR `Blob` (BİNAR DATA PARÇASI) OLARAQ CALLBACK-Ə GƏLİR.
+- `if (!blob || blob.size >= file.size) { resolve(file); return }` — İKİ TƏHLÜKƏSİZLİK YOXLAMASI: (1) `canvas.toBlob` NƏZƏRİ OLARAQ `null` QAYTARA BİLƏR (NADİR HALLARDA), (2) SIXILMIŞ NƏTİCƏ ORİJİNALDAN **BÖYÜK** ÇIXARSA (MƏS. ARTIQ KİÇİK/WebP BİR ŞƏKİL YENİDƏN KODLAŞDIRILANDA) — BU HALLARIN İKİSİNDƏ DƏ, SIXMANIN FAYDASI YOXDUR, ORİJİNAL FAYL OLDUĞU KİMİ QAYTARILIR.
+- `new File([blob], name, { type: 'image/webp' })` — `Blob`-U YENİDƏN BİR `File` OBYEKTİNƏ ÇEVİRİR (`uploadImage`-in GÖZLƏDİYİ TİP MƏHZ `File`-DIR), ADINI `.webp` UZANTISI İLƏ YENİLƏYİR.
+- `img.onerror = () => {...}` — ŞƏKİL YÜKLƏNMƏSİ UĞURSUZ OLARSA (KORRUPT FAYL VƏ S.), YENƏ ORİJİNAL FAYLI QAYTARIR — FUNKSİYA HEÇ VAXT XƏTA ATMIR (throw), HƏMİŞƏ BİR NƏTİCƏ İLƏ (`resolve`) BİTİR.
+- **YENİ KİTABXANA ƏLAVƏ OLUNMADI** — BÜTÜN BU MƏNTİQ, BRAUZERİN ÖZ, HAZIR API-LƏRİ (`URL.createObjectURL`, `<canvas>`, `Blob`) ÜZƏRİNDƏ QURULUB, `package.json`-A HEÇ BİR YENİ ASILILIQ (dependency) ƏLAVƏ OLUNMAYIB.
 
 ### `ActionMenu.tsx` (ən MÜRƏKKƏB SHARED KOMPONENT)
 
@@ -2927,8 +3121,13 @@ export function useCategoriesData(search: string) {
     queryFn: () => listCategories().then((data) => data.map(mapCategoryFromApi)),
   })
 
+  // Son yaradılan (ən böyük id) ən başda görünsün deyə — SONRADAN ƏLAVƏ OLUNAN
+  // `.sort(...)`, backend siyahını yaradılma sırası ilə (köhnədən yeniyə) qaytarır.
   const filtered = useMemo(
-    () => categories.filter((c) => `${c.name} ${c.description}`.toLocaleLowerCase('az').includes(search.toLocaleLowerCase('az'))),
+    () =>
+      categories
+        .filter((c) => `${c.name} ${c.description}`.toLocaleLowerCase('az').includes(search.toLocaleLowerCase('az')))
+        .sort((a, b) => b.id - a.id),
     [categories, search],
   )
   // 7, not usePagination's own default of 5 — 5 rows left visible dead space
@@ -2941,6 +3140,7 @@ export function useCategoriesData(search: string) {
 ```
 - `useQuery({ queryKey: ['categories'], queryFn: ... })` — TANSTACK QUERY-NİN ƏSAS HOOK-UDUR. `queryFn`-İN NƏTİCƏSİ AVTOMATİK OLARAQ `Category[]`-DİR (ÇÜNKİ `listCategories(): Promise<CategoryApi[]>`, `.map(mapCategoryFromApi)` İSƏ HƏR ELEMENTİ `CategoryApi`-DƏN `Category`-YƏ ÇEVİRİR) — HEÇ BİR ƏLAVƏ TİP YAZILMASINA EHTİYAC QALMIR (`useQuery<Category[]>(...)` YAZMAQ LAZIM DEYİL — CLAUDE.md-DƏ QEYD OLUNUB: TİPLƏR ARTIQ `services`/`adapters`-DAN "AXIR").
 - **`.toLocaleLowerCase('az')`, NİYƏ SADƏ `.toLowerCase()` YOX?** BU, KODDA TAPILAN VƏ DÜZƏLDİLƏN REAL BİR BUQ İDİ: JavaScript-in ADİ `.toLowerCase()` FUNKSİYASI, AZƏRBAYCAN ƏLİFBASININ BÖYÜK **İ** HƏRFİNİ SƏHV KİÇİLDİR — `'İlkin'.toLowerCase()` NƏTİCƏSİ SADƏ `'ilkin'` DEYİL, **`'i̇lkin'`** OLUR — ÇÜNKİ `.toLowerCase()` İNGİLİS DİLİ QAYDALARINA GÖRƏ İŞLƏYİR. `.toLocaleLowerCase('az')` İSƏ AZƏRBAYCAN DİLİ QAYDALARINA GÖRƏ KİÇİLDİR (`İ` → `i`, DÜZGÜN) — BUNA GÖRƏ LAYİHƏNİN BÜTÜN AXTARIŞ FİLTRLƏRİNDƏ MƏHZ BU İŞLƏDİLİR.
+- **`.sort((a, b) => b.id - a.id)` — SONRADAN ƏLAVƏ OLUNAN, "SON YARADILAN ƏN BAŞDA" TƏLƏBİ ÜÇÜN.** Hissə 2-DƏKİ `.sort(...)`-A BAXIN: MASSİVİ, VERİLƏN "MÜQAYİSƏ FUNKSİYASINA" GÖRƏ SIRALAYIR — `(a, b) => b.id - a.id` DÜSTURU "`b`-NİN ID-Sİ `a`-NIN ID-SİNDƏN BÖYÜKDÜRSƏ, `b` ÖNDƏ OLSUN" DEMƏKDİR, YƏNİ **AZALAN** SIRA (ƏN BÖYÜK ID → ƏN KİÇİK ID). ID-LƏR BACKEND-DƏ AVTOMATİK ARTAN (autoincrement) OLDUĞU ÜÇÜN, ƏN BÖYÜK ID = ƏN SON YARADILAN DEMƏKDİR — BELƏLİKLƏ ƏLAVƏ SAHƏYƏ (MƏS. TARİXƏ GÖRƏ SIRALAMA) EHTİYAC QALMADAN, "SON YARADILAN ƏN BAŞDA" NƏTİCƏSİ ALINIR. BU, SADƏCƏ FRONTEND-DƏ (ARTIQ ÇƏKİLMİŞ SİYAHININ ÜZƏRİNDƏ) EDİLİR — BACKEND-Ə HEÇ BİR ƏLAVƏ PARAMETR GETMİR, BACKEND ÖZ SIRASINDA (ADƏTƏN ƏN KÖHNƏDƏN ƏN YENİYƏ) QAYTARMAĞA DAVAM EDİR. **EYNİ SƏTIR `Campaigns`/`Products`-UN ÖZ `queries/use...Data.ts` FAYLLARINDA DA VAR** — `Orders` VƏ `Users` TƏSİRLƏNMİR (Orders-in ARTIQ ÖZ `Tarix` SÜTUN SIRALAMASI VAR, Users-də YARATMA AXINI YOXDUR).
 - `usePagination(filtered, 7)` — Hissə 15-Ə BAXIN, `T = Category` OLARAQ İŞLƏYİR. **İKİNCİ ARQUMENT `7`** — DEFAULT `5` ƏVƏZİNƏ — KODUN ÖZÜNDƏKİ ŞƏRHDƏ İZAH OLUNAN BİR VİZUAL QƏRARDIR: 5 SƏTİR SƏHİFƏNİN AŞAĞISINDA BOŞ YER BURAXIRDI, 7 SƏTİR SƏHİFƏ "ÇƏRÇİVƏSİNƏ" (chrome) DAHA YAXŞI OTURUR.
 
 **`queries/useCategoryMutations.ts` — yarat/yenilə/sil, ARTIQ AYRI FAYLDA:**
@@ -3034,7 +3234,7 @@ Tək bir sabit — AMMA ÖZ FAYLINDA, ÇÜNKİ HƏM `hooks/useCategoriesPage.ts`
 **`components/CategoryForm/CategoryForm.tsx` — forma modalı, react-hook-form İLƏ:**
 ```tsx
 export default function CategoryForm({ open, onClose, editing, defaultValues, submitting, onSubmit }: CategoryFormProps) {
-  const { register, handleSubmit, reset } = useForm<CategoryFormValues>({ defaultValues })
+  const { register, handleSubmit, reset, watch, setValue } = useForm<CategoryFormValues>({ defaultValues })
 
   // react-hook-form only reads `defaultValues` once, on mount — reset it
   // explicitly whenever the modal (re)opens so switching between "create" and
@@ -3046,9 +3246,7 @@ export default function CategoryForm({ open, onClose, editing, defaultValues, su
   return (
     <Modal open={open} onClose={onClose}>
       <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col gap-4">
-        <FormField label="Şəkil ünvanı">
-          <FormInput placeholder="https://..." {...register('imageUrl')} />
-        </FormField>
+        <ImageUploadField value={watch('imageUrl')} onChange={(url) => setValue('imageUrl', url, { shouldDirty: true })} />
         <FormField label="Ad">
           <FormInput {...register('name', { required: true })} />
         </FormField>
@@ -3063,9 +3261,9 @@ export default function CategoryForm({ open, onClose, editing, defaultValues, su
   )
 }
 ```
-- **BU, LAYİHƏNİN ƏN BÖYÜK FORMA-DAXİLİ DƏYİŞİKLİYİDİR** — KÖHNƏ VERSİYADA HƏR `<input>` ÜÇÜN `value={form.X}` + `onChange={(e) => setForm((f) => ({ ...f, X: e.target.value }))}` YAZILIRDI ("CONTROLLED INPUT", Hissə 2-yə baxın); İNDİ İSƏ **react-hook-form** İDARƏ EDİR — HƏR SAHƏ ÜÇÜN `useState` YOXDUR, SADƏCƏ `{...register('imageUrl')}` YAZILIR.
-- **`useForm<CategoryFormValues>({ defaultValues })`** — Hissə 3-dəki GENERİK: "bu formanın DƏYƏRLƏRİ `CategoryFormValues` FORMASINDA OLACAQ" deyir. Nəticə obyektindən `register`/`handleSubmit`/`reset` DESTRUCTURE olunur.
-- **`register('imageUrl')`** — react-hook-form-un ƏSAS FUNKSİYASI: `{ name: 'imageUrl', onChange, onBlur, ref }` FORMASINDA BİR OBYEKT QAYTARIR, `{...register(...)}` İLƏ BUNLAR BİRBAŞA `<FormInput>`-A "TÖKÜLÜR" (SPREAD, Hissə 2-yə baxın) — NƏTİCƏDƏ, HƏR HƏRFDƏ REACT-IN ÖZÜNÜ YENİDƏN RENDER ETMƏSİNƏ EHTİYAC QALMIR (react-hook-form DAXİLİ OLARAQ "uncontrolled" (nəzarətsiz) input-larla işləyir, DOM-un ÖZÜNÜ birbaşa oxuyur) — BÖYÜK FORMALARDA BU, PERFORMANS ÜSTÜNLÜYÜ VERİR.
+- **BU, LAYİHƏNİN ƏN BÖYÜK FORMA-DAXİLİ DƏYİŞİKLİYİDİR** — KÖHNƏ VERSİYADA HƏR `<input>` ÜÇÜN `value={form.X}` + `onChange={(e) => setForm((f) => ({ ...f, X: e.target.value }))}` YAZILIRDI ("CONTROLLED INPUT", Hissə 2-yə baxın); İNDİ İSƏ **react-hook-form** İDARƏ EDİR — HƏR SAHƏ ÜÇÜN `useState` YOXDUR, SADƏCƏ `{...register('name')}` KİMİ YAZILIR.
+- **`useForm<CategoryFormValues>({ defaultValues })`** — Hissə 3-dəki GENERİK: "bu formanın DƏYƏRLƏRİ `CategoryFormValues` FORMASINDA OLACAQ" deyir. Nəticə obyektindən `register`/`handleSubmit`/`reset`/`watch`/`setValue` DESTRUCTURE olunur.
+- **`<ImageUploadField value={watch('imageUrl')} onChange={(url) => setValue('imageUrl', url, { shouldDirty: true })} />`** — "Şəkil" SAHƏSİ ARTIQ `register('imageUrl')`-LƏ YOX, BU İKİSİ İLƏ İDARƏ OLUNUR (Hissə 14-dəki `ImageUploadField` bölməsinə baxın): `watch('imageUrl')` — react-hook-form-UN "BU SAHƏNİN CARİ DƏYƏRİNİ MƏNƏ VER, VƏ DƏYİŞƏNDƏ YENİDƏN RENDER ET" FUNKSİYASI (`register`-DƏN FƏRQLİ OLARAQ, "CONTROLLED" ÜSULDUR) — `setValue('imageUrl', url, { shouldDirty: true })` İSƏ "BU SAHƏNİ PROQRAMLA (ADMİNİN ÖZÜ YAZMADAN) YENİ DƏYƏRƏ TƏYİN ET" DEMƏKDİR (`ImageUploadField`-in ÖZÜ, YÜKLƏMƏ BİTƏNDƏ, BU `onChange`-İ ÇAĞIRIR). `shouldDirty: true` — react-hook-form-A "BU SAHƏ ARTIQ TOXUNULUB (dirty) HESAB ET" DEYİR, FORMANIN "DƏYİŞİKLİK VAR" VƏZİYYƏTİNİ DÜZGÜN İZLƏMƏK ÜÇÜN. **NİYƏ `register`-LƏ YOX?** ÇÜNKİ `register(...)`-İN QAYTARDIĞI `ref`/`onChange`/`onBlur` NATİV BİR `<input>`/`<select>`-Ə "YAPIŞDIRILMAQ" ÜÇÜNDÜR — `ImageUploadField` İSƏ ÖZÜ BİR NEÇƏ AYRI ELEMENTDƏN (İKİ INPUT, İKİ DÜYMƏ) QURULU MÜRƏKKƏB BİR KOMPONENTDİR, ONA "TƏK BİR `ref`" VERMƏYİN MƏNASI YOXDUR — `watch`/`setValue` CÜTÜ İSƏ İSTƏNİLƏN "XÜSUSİ" (custom) KOMPONENTİ, SADƏ `value`/`onChange` PROP-LARI İLƏ, react-hook-form-A BAĞLAMAĞIN ƏN SADƏ YOLUDUR (`ProductForm`-DAKI `Növ`/`Kateqoriya` SAHƏLƏRİ İSƏ, VALİDASİYA (`required`) LAZIM OLDUĞU ÜÇÜN, BUNUN ƏVƏZİNƏ `Controller` KOMPONENTİNDƏN İSTİFADƏ EDİR — AŞAĞIDA, `ProductForm.tsx` BÖLMƏSİNƏ BAXIN).
 - **`register('name', { required: true })`** — İKİNCİ ARQUMENT, VALİDASİYA QAYDALARIDIR — KÖHNƏ VERSİYADA BU, HTML-in ÖZ `required` ATRİBUTU İLƏ (`<input required />`) EDİLİRDİ, İNDİ İSƏ react-hook-form-UN ÖZÜ İDARƏ EDİR (EYNİ NƏTİCƏ, AMMA FORMANIN VALİDASİYA MƏNTİQİ BİR YERDƏ TOPLANIR).
 - **`useEffect(() => { if (open) reset(defaultValues) }, [open, defaultValues, reset])`** — BU, react-hook-form-A KEÇİDİN "GİZLİ" BİR TƏLƏBİDİR, KODUN ÖZÜNDƏKİ ŞƏRHDƏ İZAH OLUNUB: react-hook-form `defaultValues`-i YALNIZ KOMPONENT İLK DƏFƏ MOUNT OLANDA OXUYUR — MODAL BAĞLANIB-AÇILANDA (`open` DƏYİŞƏNDƏ) TypeScript/React BUNU AVTOMATİK YENİLƏMİR, ONA GÖRƏ, MODAL HƏR AÇILANDA (`if (open)`), `reset(defaultValues)` ƏL İLƏ ÇAĞIRILIR — BUNSUZ, "YARAT" REJİMİNDƏN SONRA "DÜZƏLT" REJİMİNƏ (VƏ YA İKİ FƏRQLİ ELEMENTİ DÜZƏLTMƏ ARASINDA) KEÇƏNDƏ, FORMA KÖHNƏ (STALE) DƏYƏRLƏRİ GÖSTƏRƏRDİ.
 - **`handleSubmit(onSubmit)`** — DİQQƏT, BU `handleSubmit`, `hooks/useCategoriesPage.ts`-dəki `handleSubmit`-DƏN FƏRQLİ BİR ŞEYDİR (EYNİ AD, FƏRQLİ MƏNBƏ) — BU, react-hook-form-UN ÖZ FUNKSİYASIDIR: FORMA GÖNDƏRİLƏNDƏ, ƏVVƏLCƏ ÖZ VALİDASİYASINI (MƏS. `required`) YOXLAYIR, YALNIZ KEÇSƏ, `onSubmit` (BİZİM VERDİYİMİZ, `CategoryFormValues` ALAN FUNKSİYA) ÇAĞIRILIR — VƏ `e.preventDefault()`-Ü DƏ ÖZÜ EDİR, BİZ ARTIQ BUNU ƏL İLƏ YAZMIRIQ.
@@ -3135,7 +3333,40 @@ const { data: categoryOptions = [] } = useQuery({
 <Button icon={Plus} onClick={() => openCreate({ category_id: categoryOptions[0]?.id ?? '' })}>Yeni Məhsul</Button>
 ```
 - `openCreate` FUNKSİYASINA `{ category_id: categoryOptions[0]?.id ?? '' }` VERİLİR (`useCrudModal`-DAKI `overrides: Partial<ProductForm>` PARAMETRİ, Hissə 15-Ə BAXIN) — YENİ MƏHSUL FORMASI AÇILANDA, DROPDOWN-DA BİRİNCİ KATEQORİYA AVTOMATİK SEÇİLİ GƏLSİN DEYƏ. `categoryOptions[0]?.id ?? ''` — `categoryOptions[0]` (Hissə 3-DƏKİ `noUncheckedIndexedAccess` AYARINA GÖRƏ) `undefined` DƏ OLA BİLƏR (SİYAHI BOŞ OLA BİLƏR), ONA GÖRƏ `?.id` (OPTIONAL CHAINING) + `?? ''` (NULLİSH COALESCING) LAZIM GƏLİB.
-- TİP (`Növ`) DROPDOWN-U `FormSelect` + `PRODUCT_TYPE_OPTIONS`-DAN QURULUR (Hissə 11-Ə BAXIN), `{...register('type')}` İLƏ react-hook-form-A QOŞULUR — KÖHNƏ VERSİYADA BURADA `as ProductType` VAR İDİ (`<select>`-in `onChange`-i HƏMİŞƏ `string` QAYTARDIĞI ÜÇÜN), react-hook-form-A KEÇDİKDƏN SONRA BU AS-A EHTİYAC QALMAYIB (`register`-in ÖZÜ, `useForm<ProductForm>`-DAN GƏLƏN GENERİK SAYƏSİNDƏ, SAHƏNİN TİPİNİ ARTIQ BİLİR). BADGE RƏNGİ `productTypeBadgeColor(item.type)` FUNKSİYASI İLƏ TƏYİN OLUNUR.
+- **SONRADAN ƏLAVƏ OLUNAN DƏYİŞİKLİK: `Növ` VƏ `Kateqoriya` ARTIQ NATİV `<select>` (`FormSelect`) DEYİL, `FormDropdown` (Hissə 14-ə baxın).** Köhnə versiyada (VƏ BU SƏNƏDİN ƏVVƏLKİ SÜRÜMÜNDƏ) `{...register('type')}` YAZILIRDI — İNDİ İSƏ HƏR İKİ SAHƏ, react-hook-form-un **`Controller`** KOMPONENTİ İLƏ BAĞLANIR:
+```tsx
+const { register, handleSubmit, reset, watch, setValue, control } = useForm<ProductFormValues>({ defaultValues })
+const TYPE_OPTIONS = PRODUCT_TYPE_OPTIONS.map((t) => ({ value: t, label: PRODUCT_TYPE_LABELS[t] }))
+// ...
+<FormField label="Növ">
+  <Controller
+    control={control}
+    name="type"
+    render={({ field }) => <FormDropdown value={field.value} onChange={field.onChange} options={TYPE_OPTIONS} />}
+  />
+</FormField>
+// ...
+<FormField label="Kateqoriya">
+  <Controller
+    control={control}
+    name="category_id"
+    rules={{ required: true }}
+    render={({ field }) => (
+      <FormDropdown
+        value={String(field.value)}
+        onChange={field.onChange}
+        options={categoryOptions.map((c) => ({ value: String(c.id), label: c.name }))}
+        placeholder="Kateqoriya seçin"
+      />
+    )}
+  />
+</FormField>
+```
+  - **`<Controller control={control} name="type" render={({ field }) => ...} />`** — `register`-DƏN FƏRQLİ BİR YOLLA, react-hook-form-A "XÜSUSİ" (custom, native OLMAYAN) KOMPONENTLƏRİ QOŞMAĞIN ÜSULUDUR (Hissə 14-DƏKİ `FormDropdown` BÖLMƏSİNDƏ QEYD OLUNDU). `render` PROP-U BİR FUNKSİYADIR, react-hook-form ONA `field` OBYEKTİNİ (`{ value, onChange, ... }`) VERİR — BİZ DƏ SADƏCƏ `<FormDropdown value={field.value} onChange={field.onChange} .../>` YAZARAQ, İKİSİNİ BİR-BİRİNƏ "BAĞLAYIRIQ".
+  - `rules={{ required: true }}` — `Kateqoriya` SAHƏSİNDƏ, ƏVVƏLKİ `register('category_id', { required: true })`-DƏKİ EYNİ VALİDASİYA QAYDASI, İNDİ `Controller`-in ÖZ `rules` PROP-U İLƏ VERİLİR — NƏTİCƏ EYNİDİR (BOŞ KATEQORİYA İLƏ FORMA GÖNDƏRİLƏ BİLMƏZ), SADƏCƏ SİNTAKSİS FƏRQLİDİR.
+  - `value={String(field.value)}` — `category_id`-NİN TİPİ `number | string`-DİR (Hissə 5-Ə BAXIN, `ProductForm.category_id`), AMMA `FormDropdown`-UN `value` PROP-U HƏMİŞƏ `string`-DİR — `String(...)` İLƏ RƏQƏM DƏ OLSA, STRİNG DƏYƏ ÇEVRİLİR (SEÇİMLƏRİN `value`-LARI DA `String(c.id)` İLƏ STRİNG-DİR, YƏNİ MÜQAYİSƏ DÜZGÜN İŞLƏYİR).
+  - `TYPE_OPTIONS`/`categoryOptions.map(...)` — `FormDropdown`-UN GÖZLƏDİYİ `{ value, label }[]` FORMASINA ÇEVİRMƏ — `TYPE_OPTIONS` KOMPONENTİN XARİCİNDƏ, BİR DƏFƏLİK HESABLANIR (HƏR RENDER-DƏ YENİDƏN YARADILMASIN DEYƏ), `categoryOptions`-DAN GƏLƏN İSƏ HƏR RENDER-DƏ (SƏHV YOX, SADƏCƏ `categoryOptions` PROP KİMİ GƏLİR VƏ TEZ-TEZ DƏYİŞMİR).
+  - BADGE RƏNGİ (CƏDVƏLDƏ) HƏLƏ DƏ `productTypeBadgeColor(item.type)` FUNKSİYASI İLƏ TƏYİN OLUNUR — BU HİSSƏ DƏYİŞMƏYİB, YALNIZ FORMANIN ÖZÜNDƏKİ SEÇİM ÜSULU DƏYİŞİB.
 
 ### `src/pages/Protected/Orders/` — FƏRQLİ NÜMUNƏ, ARTIQ tanstack-table ÜZƏRİNDƏ QURULUB
 
