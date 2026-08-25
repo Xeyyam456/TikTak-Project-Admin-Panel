@@ -1359,12 +1359,26 @@ api.interceptors.request.use((config) => {
 // at runtime this unwraps the `{data}` envelope to the raw payload. The real
 // public contract callers see is `UnwrappedApi` (the `as unknown as UnwrappedApi`
 // cast on the default export below), not this function's nominal return type.
-const handleSuccess = (response: AxiosResponse) => (response.data.data ?? response.data) as AxiosResponse
+// A list endpoint that actually paginates server-side (currently only
+// `/admin/products` with `?limit&page`) sends `pagination` as a sibling of
+// `data`, not nested inside it — the plain `data ?? body` unwrap below would
+// silently drop that metadata, so it's preserved as `{ data, pagination }`
+// whenever the body carries it; every other endpoint has no `pagination` key
+// and is unaffected.
+const handleSuccess = (response: AxiosResponse) => {
+  const body = response.data
+  if (body && typeof body === 'object' && 'pagination' in body) {
+    return { data: body.data, pagination: body.pagination } as unknown as AxiosResponse
+  }
+  return (body.data ?? body) as AxiosResponse
+}
 ```
 
-Backend HƏR cavabı `{ message: "Ok", data: {...}, result: true }` formasında qaytarır (bu, layihənin backend-inin öz qaydasıdır — `docs/API.md`-də sənədləşdirilib). Bizə isə YALNIZ `data` hissəsi lazımdır, `message`/`result` yox. `response.data.data` — bu, "cavabın body-sinin İÇİNDƏKİ `data` sahəsi" deməkdir (`response.data` = bütün body, `response.data.data` = onun `data` sahəsi). `?? response.data` — əgər `data` sahəsi YOXDURSA (bəzi endpoint-lər — məs. statistika — bu qaydaya uymur, birbaşa xam obyekt qaytarır), onda BÜTÜN body-ni qaytar.
+Backend HƏR cavabı `{ message: "Ok", data: {...}, result: true }` formasında qaytarır (bu, layihənin backend-inin öz qaydasıdır — `admin.md`-də sənədləşdirilib). Bizə isə ADƏTƏN YALNIZ `data` hissəsi lazımdır, `message`/`result` yox. `body.data ?? body` — bu, "cavabın body-sinin İÇİNDƏKİ `data` sahəsi" deməkdir (`body` = bütün body, `body.data` = onun `data` sahəsi). `?? body` — əgər `data` sahəsi YOXDURSA (bəzi endpoint-lər — məs. statistika — bu qaydaya uymur, birbaşa xam obyekt qaytarır), onda BÜTÜN body-ni qaytar.
 
-**`as AxiosResponse` NİYƏ VAR, HALBUKI QAYTARILAN DƏYƏR HƏQİQƏTƏN `AxiosResponse` DEYİL?** Bu, Hissə 3-DƏ QEYD OLUNAN, LAYİHƏDƏKİ ƏN "FƏRQLİ" TİP YAZISIDIR: `api.interceptors.response.use(...)` FUNKSİYASI (BİRAZ AŞAĞIDA GÖRƏCƏYİK) AXIOS-UN ÖZ TİP TƏLƏBİNƏ GÖRƏ, BU FUNKSİYANIN `AxiosResponse` QAYTARMASINI GÖZLƏYİR (ÇÜNKİ, TİP SƏVİYYƏSİNDƏ, `api` HƏLƏ "ADİ" AXIOS İNSTANSIDIR, `UnwrappedApi` YOX). AMMA RUNTIME-DA (KODUN HƏQİQİ İŞLƏMƏ ANINDA), BU FUNKSİYA ARTIQ ZƏRFİ AÇIB, TAM FƏRQLİ BİR FORMA (`XApi` KİMİ BİR OBYEKT, YA DA MASSİV) QAYTARIR. YƏNİ: **BU FUNKSİYANIN "ELAN OLUNAN" TİPİ İLƏ "HƏQİQİ" DAVRANIŞI QƏSDƏN FƏRQLİDİR** — BU UYĞUNSUZLUĞUN "DÜZGÜN" TƏRƏFİ, FAYLIN SONUNDAKI `export default api as unknown as UnwrappedApi` SƏTRİDİR (AŞAĞIDA GÖRƏCƏYİK) — ORADAN SONRA, LAYİHƏNİN QALAN HİSSƏSİ ARTIQ `api`-Nİ `UnwrappedApi` KİMİ GÖRÜR, BU ARADAKI "KİÇİK YALANI" GÖRMÜR.
+**YENİ ƏLAVƏ OLUNAN `if ('pagination' in body)` ŞAXƏSİ NƏ ÜÇÜNDÜR?** Backend-in `/admin/products` list endpoint-i (VƏ YALNIZ O — bax aşağıda "Products" bölməsinə) `limit`/`page`/`search` PARAMETRLƏRİNİ REAL OLARAQ DƏSTƏKLƏYİR VƏ CAVABA `data`-NIN YANINDA, ONUNLA EYNİ SƏVİYYƏDƏ, BİR DƏ `pagination: {next, prev, current, total, totalPages}` OBYEKTİ ƏLAVƏ EDİR — YƏNİ CAVAB `{ message, data: [...], pagination: {...}, result: true }` ŞƏKLİNDƏDİR. KÖHNƏ `body.data ?? body` SƏTRİ TƏK BAŞINA İŞLƏSƏYDİ, `response.data.data`-NI (MƏHSUL SİYAHISINI) QAYTARARDI, AMMA `pagination` OBYEKTİ HEÇ VAXT GERİ QAYIDAN DƏYƏRƏ DÜŞMƏZDİ — SƏSSİZCƏ İTƏRDİ. Ona görə İNDİ ƏVVƏLCƏ YOXLANILIR: əgər body-nin ÖZÜNDƏ (`data`-nın yanında) `pagination` AÇARI VARSA, funksiya bunun ƏVƏZİNƏ `{ data: body.data, pagination: body.pagination }` FORMASINDA BİR OBYEKT QAYTARIR — YƏNİ ARTIQ SADƏCƏ MASSİV DEYİL, HƏM MASSİVİ, HƏM DƏ SƏHİFƏLƏMƏ MƏLUMATINI SAXLAYAN BİR OBYEKT. Bu şaxə YALNIZ `pagination` açarı olan cavablarda işə düşür — kateqoriyalar/kampaniyalar/istifadəçilər/sifarişlər kimi digər BÜTÜN endpoint-lərin cavabında bu açar YOXDUR, ONA GÖRƏ ONLAR ÜÇÜN HEÇ NƏ DƏYİŞMİR, KÖHNƏ `body.data ?? body` DAVRANIŞI EYNƏN QALIR.
+
+**`as unknown as AxiosResponse` NİYƏ VAR, HALBUKI QAYTARILAN DƏYƏR HƏQİQƏTƏN `AxiosResponse` DEYİL?** Bu, Hissə 3-DƏ QEYD OLUNAN, LAYİHƏDƏKİ ƏN "FƏRQLİ" TİP YAZISIDIR: `api.interceptors.response.use(...)` FUNKSİYASI (BİRAZ AŞAĞIDA GÖRƏCƏYİK) AXIOS-UN ÖZ TİP TƏLƏBİNƏ GÖRƏ, BU FUNKSİYANIN `AxiosResponse` QAYTARMASINI GÖZLƏYİR (ÇÜNKİ, TİP SƏVİYYƏSİNDƏ, `api` HƏLƏ "ADİ" AXIOS İNSTANSIDIR, `UnwrappedApi` YOX). AMMA RUNTIME-DA (KODUN HƏQİQİ İŞLƏMƏ ANINDA), BU FUNKSİYA ARTIQ ZƏRFİ AÇIB, TAM FƏRQLİ BİR FORMA (`XApi` KİMİ BİR OBYEKT, MASSİV, YA DA İNDİ `{data, pagination}` OBYEKTİ) QAYTARIR. YƏNİ: **BU FUNKSİYANIN "ELAN OLUNAN" TİPİ İLƏ "HƏQİQİ" DAVRANIŞI QƏSDƏN FƏRQLİDİR** — BU UYĞUNSUZLUĞUN "DÜZGÜN" TƏRƏFİ, FAYLIN SONUNDAKI `export default api as unknown as UnwrappedApi` SƏTRİDİR (AŞAĞIDA GÖRƏCƏYİK) — ORADAN SONRA, LAYİHƏNİN QALAN HİSSƏSİ ARTIQ `api`-Nİ `UnwrappedApi` KİMİ GÖRÜR, BU ARADAKI "KİÇİK YALANI" GÖRMÜR. `{ data: body.data, pagination: body.pagination }` OBYEKTİ ÖZÜ, `AxiosResponse`-UN GÖZLƏDİYİ `status`/`statusText`/`headers`/`config` SAHƏLƏRİNİ DAŞIMADIĞI ÜÇÜN, TypeScript BİRBAŞA `as AxiosResponse`-A İCAZƏ VERMİR ("KİFAYƏT QƏDƏR ÜST-ÜSTƏ DÜŞMÜR" XƏTASI) — ONA GÖRƏ, HİSSƏ 3-DƏKİ "SANKSİYALI CÜT-CASTİNQ" QAYDASINA UYĞUN OLARAQ, ƏVVƏLCƏ `unknown`-A, SONRA `AxiosResponse`-A ÇEVRİLİR.
 
 ```ts
 const STATUS_MESSAGES: Record<number, string> = {
@@ -1530,7 +1544,19 @@ export const deleteCategory = (id: number) => api.delete<null>(`/admin/categorie
 - `api.put<CategoryApi>(\`/admin/categories/${id}\`, payload)` — PUT, MÖVCUD kateqoriyanı YENİLƏYİR (`id: number` — TİPLƏNMİŞ PARAMETR, şablon literalla URL-in İÇİNƏ yerləşdirilir).
 - `api.delete<null>(\`/admin/categories/${id}\`)` — DELETE, "CAVABDA HEÇ BİR FAYDALI DATA YOXDUR" (`<null>`, ÇÜNKİ SİLİNMƏ CAVABI `docs/API.md`-YƏ GÖRƏ `data: null` QAYTARIR) DEYƏRƏK, KATEQORIYANI SİLİR.
 
-**Diqqət**: `createCategory` TƏK saylı `/admin/category`, digər 3-ü isə CƏM saylı `/admin/categories` yolundan istifadə edir — bu, BİZİM SƏHVİMİZ DEYİL, BACKEND-in ÖZ QAYDASIDIR (sənədləşdirilib, `docs/API.md`-yə baxın).
+**Diqqət**: `createCategory` TƏK saylı `/admin/category`, digər 3-ü isə CƏM saylı `/admin/categories` yolundan istifadə edir — bu, BİZİM SƏHVİMİZ DEYİL, BACKEND-in ÖZ QAYDASIDIR (sənədləşdirilib, `admin.md`-yə baxın).
+
+**`productService.ts`-in `listProducts` funksiyası, YUXARIDAKI `listCategories`-DƏN FƏRQLİ OLARAQ, ARTIQ PARAMETR ALIR:**
+```ts
+import type { ProductApi, ProductPayload, ProductsListParams, ProductsListResponse } from '@/types/product'
+
+export const listProducts = (params?: ProductsListParams) =>
+  api.get<ProductsListResponse>('/admin/products', { params })
+```
+- `params?: ProductsListParams` — `ProductsListParams = { page?: number; limit?: number; search?: string }` (Hissə 6-DA, `src/types/product/`-DA TƏYİN OLUNUB). Hər 3 SAHƏ DƏ OPSİONALDIR (`?`), YƏNİ `listProducts()` (HEÇ NƏ VERMƏDƏN) DE ÇAĞIRILA BİLƏR.
+- `api.get<ProductsListResponse>('/admin/products', { params })` — İKİNCİ ARQUMENT (`{ params }`) AXIOS-UN ÖZ KONFİQURASİYA OBYEKTİDİR (`AxiosRequestConfig`-İN BİR HİSSƏSİ) — AXIOS BUNU GÖRƏNDƏ, `params` OBYEKTİNİN İÇİNDƏKİ HƏR SAHƏNİ AVTOMATİK URL-İN SONUNA `?page=2&limit=7&search=Barbie` ŞƏKLİNDƏ (QUERY STRING KİMİ) ƏLAVƏ EDİR — BİZ ÖZÜMÜZ STRİNG BİRLƏŞDİRMƏSİ YAZMIRIQ. `undefined` DƏYƏRLİ SAHƏLƏR (MƏS. `search: undefined`) AXIOS TƏRƏFİNDƏN AVTOMATİK ATLANIR, URL-DƏ GÖRÜNMÜR.
+- **NİYƏ MƏHZ `Products`-UN `listProducts`-U BELƏDİR, `listCategories`/`listCampaigns`/`listUsers` YOX?** ÇÜNKİ REAL BACKEND-Ə QARŞI TEST EDİLİB (curl İLƏ) VƏ YALNIZ `/admin/products` `limit`/`page`/`search`-Ü HƏQİQƏTƏN NƏZƏRƏ ALIR — DİGƏR DÖRD ENDPOINT BU PARAMETRLƏRİ SADƏCƏ GÖRMƏZDƏN GƏLİR VƏ HƏMİŞƏ TAM SİYAHINI QAYTARIR. Aşağıda, "Products" bölməsində VƏ Hissə 9-un ƏVVƏLİNDƏ (`axiosInstance.ts`-in `handleSuccess`-i) ƏTRAFLI izah olunur.
+- `ProductsListResponse = { data: ProductApi[]; pagination: PaginationMeta }` — DİQQƏT, `listCategories`-in QAYTARDIĞI `CategoryApi[]` (SADƏCƏ MASSİV) İLƏ MÜQAYİSƏDƏ, BURADA CAVAB BİR OBYEKTDİR — İÇİNDƏ HƏM MASSİV (`data`), HƏM DƏ SƏHİFƏLƏMƏ MƏLUMATI (`pagination: PaginationMeta`, `src/types/common/PaginationMeta.ts`-DƏ TƏYİN OLUNUB: `{ next: number | null; prev: number | null; current: number; total: number; totalPages: number }`) VAR.
 
 `orderService.ts` bir az FƏRQLİDİR:
 ```ts
@@ -1999,30 +2025,78 @@ export default function Badge({ color = 'green', children }: BadgeProps) {
 ### `StatCard.tsx`
 
 ```tsx
-import type { ReactNode } from 'react'
-import type { IconComponent } from '@/types/common'
+import { useCountUp } from '@/shared/hooks/useCountUp'
+import type { StatCardProps } from '@/types/shared'
 import styles from './StatCard.module.css'
 
-interface StatCardProps {
-  label: ReactNode
-  value: ReactNode
-  icon: IconComponent
-  color: string
-}
-
 export default function StatCard({ label, value, icon: Icon, color }: StatCardProps) {
+  const animated = useCountUp(typeof value === 'number' ? value : 0)
+
   return (
-    <div className={styles.card}>
+    <div className={`flex flex-col gap-2 ${styles.card}`}>
       <span className={styles.label}>{label}</span>
-      <span className={styles.value}>
+      <span className={`flex items-center gap-1.5 ${styles.value}`}>
         <Icon size={16} color={color} />
-        {value}
+        {typeof value === 'number' ? animated.toLocaleString('az') : value}
       </span>
     </div>
   )
 }
 ```
-SADƏ BİR "KART" — ETİKET (`label`), RƏQƏM (`value`) VƏ RƏNGLİ İKON GÖSTƏRİR. `icon: IconComponent` — DİQQƏT, `Button`-DAN FƏRQLİ OLARAQ, BURADA `icon` **OPSİONAL DEYİL** (`?` YOXDUR) — ÇÜNKİ `StatCard` HEÇ VAXT İKONSUZ İSTİFADƏ OLUNMUR, ONA GÖRƏ TİP DƏ BUNU "MƏCBURİ" EDİR (İKONSUZ ÇAĞIRSANIZ, TypeScript XƏTA VERƏR — BU, RUNTIME-DA "İKON UNDEFINED-DIR" DEYƏ ÇÖKMƏNİN QARŞISINI ƏVVƏLCƏDƏN ALIR). ORDERS SƏHİFƏSİNDƏKİ 6 STATİSTİKA KARTI BUNDAN İSTİFADƏ EDİR.
+SADƏ BİR "KART" — ETİKET (`label`), RƏQƏM (`value`) VƏ RƏNGLİ İKON GÖSTƏRİR. `icon: IconComponent` (`StatCardProps`-UN İÇİNDƏ, Hissə 5-Ə BAXIN) — DİQQƏT, `Button`-DAN FƏRQLİ OLARAQ, BURADA `icon` **OPSİONAL DEYİL** (`?` YOXDUR) — ÇÜNKİ `StatCard` HEÇ VAXT İKONSUZ İSTİFADƏ OLUNMUR, ONA GÖRƏ TİP DƏ BUNU "MƏCBURİ" EDİR (İKONSUZ ÇAĞIRSANIZ, TypeScript XƏTA VERƏR — BU, RUNTIME-DA "İKON UNDEFINED-DIR" DEYƏ ÇÖKMƏNİN QARŞISINI ƏVVƏLCƏDƏN ALIR). ORDERS SƏHİFƏSİNDƏKİ 6 STATİSTİKA KARTI BUNDAN İSTİFADƏ EDİR.
+
+**SONRADAN ƏLAVƏ OLUNAN DƏYİŞİKLİK: `value` İNDİ, RƏQƏM OLDUQDA, 3 SANİYƏLİK "SAYMA" ANİMASİYASI İLƏ GÖSTƏRİLİR** (İSTƏK: "Sifarişlər səhifəsindəki kartlar 3 saniyəyə tamamlanan animasiya ilə dolsun"):
+- **`const animated = useCountUp(typeof value === 'number' ? value : 0)`** — `useCountUp` (AŞAĞIDA, ÖZ BÖLMƏSİNDƏ ƏTRAFLI İZAH OLUNUR) BİR HOOK-DUR, HƏR ZAMAN, ŞƏRTSİZ ÇAĞIRILMALIDIR (Hissə 13-DƏKİ "HOOK QAYDALARI"NA BAXIN — `if (typeof value === 'number') { useCountUp(...) }` KİMİ ŞƏRTLİ ÇAĞIRIŞ YAZILA BİLMƏZ). ONA GÖRƏ, `value` RƏQƏM DEYİLSƏ BELƏ, HOOK YENƏ DƏ ÇAĞIRILIR — SADƏCƏ `0` DƏYƏRİ İLƏ (`typeof value === 'number' ? value : 0`), NƏTİCƏSİ (`animated`) İSƏ O HALDA HEÇ İŞLƏDİLMİR.
+- **`{typeof value === 'number' ? animated.toLocaleString('az') : value}`** — GÖSTƏRİLƏN DƏYƏR: ƏGƏR `value` HƏQİQƏTƏN RƏQƏMDİRSƏ, ANİMASİYA OLUNAN `animated` DƏYƏRİ GÖSTƏRİLİR (`.toLocaleString('az')` İLƏ — RƏQƏMİ, MİN AYIRICI VERGÜLLƏ, MƏS. `47055` YOX, `47,055` KİMİ FORMATLAYIR); DEYİLSƏ (GƏLƏCƏKDƏ KİMSƏ `StatCard`-I MƏTNLƏ ÇAĞIRSA), SADƏCƏ ORİJİNAL `value` GÖSTƏRİLİR, HEÇ NƏ ANİMASİYA OLUNMUR.
+- HAZIRDA `StatCard`-IN YEGANƏ ÇAĞIRANI `Orders/index.tsx`-DƏKİ 6 `ORDER_STAT_CARDS`-DIR (AŞAĞIDA GÖRÜNƏCƏK) VƏ HAMISI `value={stats[key]}` — YƏNİ HƏMİŞƏ RƏQƏM — VERİR, ONA GÖRƏ ANİMASİYA HƏMİŞƏ İŞLƏYİR.
+
+### `useCountUp.ts` — `src/shared/hooks/`-DƏ, YENİ, ÜMUMİ (CROSS-CUTTING) BİR HOOK
+
+```ts
+import { useEffect, useRef, useState } from 'react'
+
+export function useCountUp(target: number, duration = 3000): number {
+  const [value, setValue] = useState(0)
+  const valueRef = useRef(0)
+
+  useEffect(() => {
+    const from = valueRef.current
+    if (from === target) return
+
+    let frameId: number
+    const start = performance.now()
+
+    const tick = (now: number) => {
+      const progress = Math.min((now - start) / duration, 1)
+      const eased = 1 - (1 - progress) ** 2
+      const next = Math.round(from + (target - from) * eased)
+      valueRef.current = next
+      setValue(next)
+      if (progress < 1) {
+        frameId = requestAnimationFrame(tick)
+      }
+    }
+    frameId = requestAnimationFrame(tick)
+
+    return () => cancelAnimationFrame(frameId)
+  }, [target, duration])
+
+  return value
+}
+```
+
+**Sətir-sətir:**
+1. **`useState(0)` + `useRef(0)` — NİYƏ İKİSİ BİRDƏN?** `value` (`useState`) — HƏR DƏYİŞDİKDƏ KOMPONENTİ YENİDƏN RENDER ETMƏK ÜÇÜN (EKRANDA GÖRÜNƏN RƏQƏM BUDUR). `valueRef` (`useRef`) — "İNDİ HANSI RƏQƏMDƏYİK" MƏLUMATINI, RENDER TƏTİKLƏMƏDƏN, FRAME-DƏN FRAME-Ə DAŞIMAQ ÜÇÜN (Hissə 13-Ə BAXIN — `useRef`-in DƏYƏRİ DƏYİŞƏNDƏ KOMPONENT YENİDƏN RENDER OLUNMUR, `useState`-DƏN FƏRQLİ). ƏGƏR YALNIZ `useState` OLSAYDI, `useEffect`-İN İÇİNDƏKİ `tick` FUNKSİYASI "HAZIRKI DƏYƏR NƏDİR" SUALINA CAVAB VERMƏK ÜÇÜN, HƏR FRAME-DƏ, KÖHNƏLMİŞ (stale) BAĞLANMA (closure) DƏYƏRİNƏ EHTİYAC DUYARDI — `useRef` BUNU DÜZGÜN, HƏMİŞƏ "TƏZƏ" SAXLAYIR.
+2. **`const from = valueRef.current; if (from === target) return`** — ƏGƏR HƏDƏF (`target`) ARTIQ HAZIRKI DƏYƏRLƏ EYNİDİRSƏ (MƏS. EYNİ DATA TƏKRAR GƏLİB, HEÇ NƏ DƏYİŞMƏYİB), HEÇ BİR ANİMASİYA BAŞLAMIR — LAZIMSIZ `requestAnimationFrame` DÖVRÜ QURULMUR.
+3. **`const start = performance.now()`** — `Date.now()`-A OXŞAR, AMMA DAHA HƏSSAS (millisaniyənin KƏSRLƏRİ İLƏ) VƏ ANİMASİYALAR ÜÇÜN NƏZƏRDƏ TUTULMUŞ BROWSER API-SİDİR. ANİMASİYANIN "NEÇƏ VAXTDIR BAŞLADIĞINI" ÖLÇMƏK ÜÇÜN İSTİFADƏ OLUNUR.
+4. **`const tick = (now: number) => {...}`** — `requestAnimationFrame`-in ÇAĞIRDIĞI FUNKSİYA, BROWSER-İN HƏR EKRAN YENİLƏMƏSİNDƏ (ADƏTƏN SANİYƏDƏ ~60 DƏFƏ) BİR DƏFƏ İŞƏ DÜŞÜR, `now` PARAMETRİ HƏMİN ANIN VAXTIDIR (`performance.now()` İLƏ EYNİ VAHİDDƏ).
+5. **`const progress = Math.min((now - start) / duration, 1)`** — "ANİMASİYANIN NEÇƏ FAİZİ BİTİB" (0-DAN 1-Ə QƏDƏR BİR DƏYƏR). `(now - start)` — BAŞLANĞICDAN BƏRİ NEÇƏ MİLLİSANİYƏ KEÇİB; `/ duration` (3000) — BUNU 0-1 ARALIĞINA ÇEVİRİR; `Math.min(..., 1)` — 3000MS-DƏN SONRA `1`-DƏN BÖYÜK OLMASININ QARŞISINI ALIR (YOXSA RƏQƏM `target`-İ ÖTÜB KEÇƏRDİ).
+6. **`const eased = 1 - (1 - progress) ** 2`** — BU, "EASE-OUT QUAD" ADLANAN BİR RİYAZİ ƏYRİDİR (ANİMASİYALARDA ÇOX İSTİFADƏ OLUNUR) — SADƏ `progress`-İ (DÜZ XƏTT, SABİT SÜRƏT) BİRBAŞA İŞLƏTMƏK ƏVƏZİNƏ, BU DÜSTUR RƏQƏMİN ƏVVƏLDƏ SÜRƏTLİ, SONDA İSƏ YAVAŞLAYARAQ "OTURMASINI" (DECELERATION) TƏMİN EDİR — GÖZƏ DAHA "TƏBİİ"/"PREMIUM" GÖRÜNÜR, DÜZ XƏTTLİ SAYMADAN FƏRQLİ OLARAQ.
+7. **`const next = Math.round(from + (target - from) * eased)`** — `from`-DAN `target`-Ə DOĞRU, `eased` NİSBƏTİNDƏ BİR ARALIQ DƏYƏR HESABLAYIR (MƏS. `from=0`, `target=260`, `eased=0.5`-DƏ `next=130` OLAR) — `Math.round` RƏQƏMİ TAM ƏDƏDƏ YUVARLAYIR (EKRANDA "47.283"-Ə OXŞAR KƏSR RƏQƏM GÖRÜNMƏSİN DEYƏ).
+8. **`valueRef.current = next; setValue(next)`** — HƏM `ref`-İ (SONRAKI FRAME-İN "HAZIRKI DƏYƏR NƏDİR" SUALINA CAVABI ÜÇÜN), HƏM DƏ `state`-İ (EKRANI YENİLƏMƏK ÜÇÜN) YENİLƏYİR — İKİSİ DƏ EYNİ ANDA, EYNİ DƏYƏRLƏ.
+9. **`if (progress < 1) { frameId = requestAnimationFrame(tick) }`** — ANİMASİYA HƏLƏ BİTMƏYİBSƏ, NÖVBƏTİ FRAME ÜÇÜN YENİDƏN ÖZÜNÜ ÇAĞIRIR (REKURSİV `requestAnimationFrame` DÖVRÜ) — `progress`-İN `1`-Ə ÇATDIĞI FRAME-DƏ İSƏ, BU ŞƏRT `false` OLUR VƏ DÖVR DAYANIR (RƏQƏM ARTIQ TAM `target`-DƏDİR).
+10. **`return () => cancelAnimationFrame(frameId)`** — `useEffect`-İN "TƏMİZLƏMƏ" (cleanup) FUNKSİYASI (Hissə 13-Ə BAXIN) — KOMPONENT SİLİNSƏ (UNMOUNT), YA DA `target`/`duration` DƏYİŞİB EFFECT YENİDƏN İŞƏ DÜŞSƏ, HƏLƏ DAVAM EDƏN ANİMASİYA DAYANDIRILIR — YOXSA, MƏSƏLƏN, İSTİFADƏÇİ SƏHİFƏNİ DƏYİŞƏNDƏ, ARTIQ MÖVCUD OLMAYAN BİR KOMPONENTİ YENİLƏMƏYƏ ÇALIŞAN "YETİM" BİR ANİMASİYA DÖVRÜ ARXA PLANDA İŞLƏMƏYƏ DAVAM ETMƏZ.
+- **`useState(0)` NİYƏ `useState(target)` DEYİL?** ƏGƏR BAŞLANĞIC DƏYƏR BİRBAŞA `target` OLSAYDI, KOMPONENT İLK DƏFƏ RENDER OLANDA RƏQƏM DƏRHAL SON DƏYƏRDƏ GÖRÜNƏRDİ (ANİMASİYASIZ) — ÇÜNKİ `useEffect`-İN İÇİNDƏKİ `from === target` YOXLAMASI DA `true` OLARDI (İKİSİ DƏ EYNİ BAŞLANĞIC DƏYƏRDƏN GƏLİR) VƏ HEÇ BİR ANİMASİYA BAŞLAMAZDI. `0`-DAN BAŞLAMAQ ISTIFADƏÇIYƏ TAM DA İSTƏNİLƏNİ VERİR: SƏHİFƏ İLK AÇILANDA (YA DA DATA YÜKLƏNƏNDƏ, `Orders`-İN `stats`-I ƏVVƏLCƏ `emptyStats` — HAMISI `0` — OLUR) KARTLAR `0`-DAN BAŞLAYIR, SONRA REAL DATA GƏLƏNDƏ (`target` DƏYİŞƏNDƏ) 3 SANİYƏYƏ ƏSL RƏQƏMƏ QƏDƏR SAYIR.
 
 ### `Thumbnail.tsx`
 
@@ -3367,6 +3441,99 @@ const TYPE_OPTIONS = PRODUCT_TYPE_OPTIONS.map((t) => ({ value: t, label: PRODUCT
   - `value={String(field.value)}` — `category_id`-NİN TİPİ `number | string`-DİR (Hissə 5-Ə BAXIN, `ProductForm.category_id`), AMMA `FormDropdown`-UN `value` PROP-U HƏMİŞƏ `string`-DİR — `String(...)` İLƏ RƏQƏM DƏ OLSA, STRİNG DƏYƏ ÇEVRİLİR (SEÇİMLƏRİN `value`-LARI DA `String(c.id)` İLƏ STRİNG-DİR, YƏNİ MÜQAYİSƏ DÜZGÜN İŞLƏYİR).
   - `TYPE_OPTIONS`/`categoryOptions.map(...)` — `FormDropdown`-UN GÖZLƏDİYİ `{ value, label }[]` FORMASINA ÇEVİRMƏ — `TYPE_OPTIONS` KOMPONENTİN XARİCİNDƏ, BİR DƏFƏLİK HESABLANIR (HƏR RENDER-DƏ YENİDƏN YARADILMASIN DEYƏ), `categoryOptions`-DAN GƏLƏN İSƏ HƏR RENDER-DƏ (SƏHV YOX, SADƏCƏ `categoryOptions` PROP KİMİ GƏLİR VƏ TEZ-TEZ DƏYİŞMİR).
   - BADGE RƏNGİ (CƏDVƏLDƏ) HƏLƏ DƏ `productTypeBadgeColor(item.type)` FUNKSİYASI İLƏ TƏYİN OLUNUR — BU HİSSƏ DƏYİŞMƏYİB, YALNIZ FORMANIN ÖZÜNDƏKİ SEÇİM ÜSULU DƏYİŞİB.
+
+### `Products`-un SƏHİFƏLƏMƏSİ (pagination) ARTIQ FƏRQLİDİR — SERVER-SIDE, `usePagination` HOOK-U İŞLƏNMİR
+
+Yuxarıda, Hissə 16-DA VƏ `Categories`/`Campaigns`-IN İZAHINDA GÖRDÜYÜNÜZ `usePagination<T>(filtered, 7)` NÜMUNƏSİ — SİYAHININ **TAMAMI** BACKEND-DƏN ÇƏKİLİR, SONRA `.slice()` İLƏ BROWSER-İN ÖZÜNDƏ "SƏHİFƏLƏNİR" — `Products` ÜÇÜN ARTIQ DOĞRU DEYİL. SƏBƏB SADƏDİR: REAL BACKEND-Ə QARŞI (curl İLƏ) TEST EDİLİB VƏ YALNIZ `GET /admin/products` `limit`/`page`/`search` PARAMETRLƏRİNİ HƏQİQƏTƏN NƏZƏRƏ ALIR VƏ CAVABLA BİRLİKDƏ `pagination: {next, prev, current, total, totalPages}` OBYEKTİ QAYTARIR — `/admin/categories`, `/admin/campaigns`, `/admin/users`, `/orders/admin` İSƏ BU PARAMETRLƏRİ SADƏCƏ GÖRMƏZDƏN GƏLİR VƏ HƏMİŞƏ TAM SİYAHINI QAYTARIR (Hissə 9-un ƏVVƏLİNDƏ, `axiosInstance.ts`-in `handleSuccess`-i İZAHINDA, BUNUN NİYƏ VACİB OLDUĞU GÖRÜLÜB). ONA GÖRƏ `Products` ARTIQ SƏHİFƏNİ VƏ AXTARIŞI BİRBAŞA BACKEND-Ə SORĞU KİMİ GÖNDƏRİR, ÖZÜ HEÇ NƏYİ KƏSMİR.
+
+`queries/useProductsData.ts`-in TAM YENİ VERSİYASI:
+```ts
+import { useEffect, useRef } from 'react'
+import { useSearchParams } from 'react-router-dom'
+import { useQuery } from '@tanstack/react-query'
+import { listProducts } from '@/services/productService'
+import { listCategories } from '@/services/categoryService'
+import { mapProductFromApi } from '@/lib/adapters/product'
+import { mapCategoryFromApi } from '@/lib/adapters/category'
+
+const DEFAULT_PAGE_SIZE = 7
+
+export function useProductsData(search: string) {
+  const [searchParams, setSearchParams] = useSearchParams()
+  const page = Number(searchParams.get('page')) || 1
+  const pageSize = Number(searchParams.get('limit')) || DEFAULT_PAGE_SIZE
+
+  const setPage = (nextPage: number) => {
+    setSearchParams(
+      (prev) => {
+        const next = new URLSearchParams(prev)
+        next.set('page', String(nextPage))
+        next.set('limit', String(pageSize))
+        return next
+      },
+      { replace: true },
+    )
+  }
+
+  useEffect(() => {
+    if (!searchParams.get('page') || !searchParams.get('limit')) {
+      setSearchParams(
+        (prev) => {
+          const next = new URLSearchParams(prev)
+          if (!next.get('page')) next.set('page', '1')
+          if (!next.get('limit')) next.set('limit', String(DEFAULT_PAGE_SIZE))
+          return next
+        },
+        { replace: true },
+      )
+    }
+  }, [])
+
+  const isFirstSearchRun = useRef(true)
+  useEffect(() => {
+    if (isFirstSearchRun.current) {
+      isFirstSearchRun.current = false
+      return
+    }
+    setPage(1)
+  }, [search])
+
+  const { data, isLoading: loading } = useQuery({
+    queryKey: ['products', { page, pageSize, search }],
+    queryFn: () =>
+      listProducts({ page, limit: pageSize, search: search || undefined }).then((res) => ({
+        items: res.data.map(mapProductFromApi),
+        total: res.pagination.total,
+      })),
+  })
+
+  const { data: categoryOptions = [] } = useQuery({
+    queryKey: ['categories'],
+    queryFn: () => listCategories().then((data) => data.map(mapCategoryFromApi)),
+  })
+
+  return { loading, paged: data?.items ?? [], total: data?.total ?? 0, page, setPage, pageSize, categoryOptions }
+}
+```
+
+**Sətir-sətir, ƏN VACİB HİSSƏLƏR:**
+
+1. **`const [searchParams, setSearchParams] = useSearchParams()`** — BU, react-router-dom-UN HOOK-UDUR (Hissə 3/13-də görülən `useState`-dən FƏRQLİ), VƏ BROWSER-İN ÜNVAN ÇUBUĞUNDAKI (address bar) `?...` HİSSƏSİNİ (query string) OXUYUR/YAZIR. `useState`-DƏN FƏRQİ: DƏYƏR REACT-IN YADDAŞINDA DEYİL, BİRBAŞA URL-DƏ SAXLANILIR — SƏHİFƏ YENİLƏNSƏ (F5) BELƏ İTMİR, LİNKİ KOPYALAYIB BAŞQASINA GÖNDƏRSƏNİZ, O DA EYNİ SƏHİFƏNİ GÖRƏR. `searchParams` — OXUMAQ ÜÇÜN (`searchParams.get('page')` KİMİ), `setSearchParams` — YAZMAQ ÜÇÜN.
+2. **`const page = Number(searchParams.get('page')) || 1`** — `searchParams.get('page')` HƏMİŞƏ `string | null` QAYTARIR (URL-DƏKİ HƏR ŞEY STRİNGDİR, REACT-ROUTER RƏQƏMƏ ÇEVİRMİR) — ONA GÖRƏ `Number(...)` İLƏ RƏQƏMƏ ÇEVRİLİR. ƏGƏR URL-DƏ `page` YOXDURSA, `searchParams.get('page')` `null` QAYTARIR, `Number(null)` İSƏ `0`-DIR (JS-in özəlliyi) — `0 || 1` İSƏ `1`-Ə "DÜŞÜR" (`0` FALSY OLDUĞU ÜÇÜN). YƏNİ: "URL-DƏ `page` VARSA ONU İŞLƏT, YOXDURSA 1-DƏN BAŞLA".
+3. **`setPage`** — ADİ BİR `useState`-in `setPage`-İ KİMİ GÖRÜNSƏ DƏ, DAXİLDƏ `setSearchParams`-I ÇAĞIRIR. `setSearchParams(updaterFn, { replace: true })` — BİRİNCİ ARQUMENT BİR FUNKSİYADIR (`prev => yeni URLSearchParams`, Hissə 13-DƏKİ `setState(prev => ...)` FORMASI İLƏ EYNİ MƏNTİQ), İKİNCİSİ İSƏ `{ replace: true }` — BU, "BROWSER TARİXÇƏSİNƏ (HISTORY) YENİ QEYD ƏLAVƏ ETMƏ, MÖVCUD OLANI ƏVƏZLƏ" DEMƏKDİR, YOXSA HƏR SƏHİFƏ DÜYMƏSİNƏ KLİK "GERİ" DÜYMƏSİNİ BİR ADDIM GERİ APARARDI (İSTƏNMƏYƏN DAVRANIŞ).
+4. **BİRİNCİ `useEffect(() => {...}, [])`** — BOŞ `[]` MASSİVİ, "YALNIZ BİR DƏFƏ, KOMPONENT İLK RENDER OLANDA İŞLƏ" DEMƏKDİR (Hissə 13-Ə BAXIN). BURADA: ƏGƏR URL-DƏ `page`/`limit` HƏLƏ YOXDURSA (İSTİFADƏÇİ SƏHİFƏNİ İLK DƏFƏ, `?...`-SUZ AÇANDA), ONLARI ƏLAVƏ EDİR — YƏNİ `/mehsullar` AÇILAN KİMİ, ÜNVAN ÇUBUĞU AVTOMATİK `/mehsullar?page=1&limit=7`-YƏ ÇEVRİLİR.
+5. **`const isFirstSearchRun = useRef(true)`** VƏ ONDAN SONRAKI İKİNCİ `useEffect(() => {...}, [search])`** — BU HİSSƏ, QURULUŞ ZAMANI TAPILAN HƏQİQİ BİR BUG-IN DÜZƏLİŞİDİR. MƏQSƏD: "AXTARIŞ MƏTNİ DƏYİŞƏNDƏ, SƏHİFƏNİ 1-Ə QAYTAR" (YOXSA, MƏSƏLƏN, 3-CÜ SƏHİFƏDƏYKƏN AXTARIŞ YAZSANIZ, BACKEND-DƏN 3-CÜ SƏHİFƏNİN NƏTİCƏLƏRİ GƏLƏR, AMMA CƏMİ 1 NƏTİCƏ OLA BİLƏR — BOŞ CƏDVƏL GÖRÜNƏR). SADƏ `useEffect(() => setPage(1), [search])` YAZILSAYDI, BU EFFECT KOMPONENT İLK RENDER OLANDA DA (MOUNT-DA) BİR DƏFƏ İŞƏ DÜŞƏRDİ (REACT-IN QAYDASI — `useEffect` HƏR ZAMAN ƏN AZI BİR DƏFƏ, İLK RENDER-DƏ DƏ İŞLƏYİR) — YƏNİ, KİMSƏ `/mehsullar?page=3` LİNKİNİ AÇANDA (REFRESH VƏ YA PAYLAŞILMIŞ LİNK), BU EFFECT DƏRHAL `setPage(1)` ÇAĞIRARDI VƏ URL-DƏKİ `page=3` İSTİFADƏÇİ HEÇ NƏ ETMƏDƏN `page=1`-Ə DÜŞƏRDİ (BU, BROWSER-DƏ TEST EDİLƏRKƏN TUTULMUŞ REAL BİR BUG-DIR). `useRef(true)` — Hissə 13-DƏ GÖRDÜYÜNÜZ `useRef`, DƏYƏRİ RENDER-LƏR ARASINDA SAXLAYIR, AMMA (`useState`-DƏN FƏRQLİ OLARAQ) DƏYİŞƏNDƏ YENİDƏN RENDER TƏTİKLƏMİR — TAM DA BURADA LAZIM OLAN BUDUR: "BU EFFECT-İN İLK DƏFƏ İŞƏ DÜŞDÜYÜNÜ YADDA SAXLA, AMMA BUNUN ÜÇÜN YENİDƏN RENDER OLUNMASIN". EFFECT-İN İÇİNDƏ: `isFirstSearchRun.current` `true`-DURSA (YƏNİ BU EFFECT-İN İLK İŞLƏMƏSİDİRSƏ), ONU `false`-A ÇEVİRİR VƏ `return` İLƏ ÇIXIR (`setPage(1)` ÇAĞIRMADAN) — YALNIZ SONRAKI DƏYİŞİKLİKLƏRDƏ (İSTİFADƏÇİ HƏQİQƏTƏN YAZMAĞA BAŞLAYANDA) `setPage(1)` İŞƏ DÜŞÜR.
+6. **`queryKey: ['products', { page, pageSize, search }]`** — Hissə 17-DƏ GÖRDÜYÜNÜZ SADƏ `['products']` AÇARINDAN FƏRQLİ OLARAQ, BURADA AÇARIN İKİNCİ ELEMENTİ BİR OBYEKTDİR (`{ page, pageSize, search }`) — TANSTACK QUERY BUNU "HƏR FƏRQLİ `page`/`pageSize`/`search` KOMBİNASİYASI ÜÇÜN AYRI BİR CACHE YERİ" KİMİ BAŞA DÜŞÜR (OBYEKTİN İÇİNDƏKİ DƏYƏRLƏRƏ GÖRƏ MÜQAYİSƏ EDİR, REFERANSA GÖRƏ YOX). YƏNİ, SƏHİFƏ 1-Ə BİR DƏFƏ GEDİB SƏHİFƏ 2-YƏ KEÇİB YENİDƏN 1-Ə QAYITSANIZ, TANSTACK QUERY SƏHİFƏ 1-İN NƏTİCƏSİNİ (15 SANİYƏLİK `staleTime` İÇİNDƏSƏ) YENİDƏN BACKEND-DƏN ÇƏKMƏDƏN, CACHE-DƏN GÖSTƏRİR.
+7. **`queryFn: () => listProducts({ page, limit: pageSize, search: search || undefined }).then((res) => ({ items: ..., total: ... }))`** — `listProducts(...)` (YUXARIDA, `productService.ts`-DƏ GÖRDÜYÜMÜZ) BACKEND-ƏGÖNDƏRİR VƏ `{ data: ProductApi[], pagination: PaginationMeta }` QAYTARIR. `.then((res) => ({ items: res.data.map(mapProductFromApi), total: res.pagination.total }))` — CAVABI, SƏHİFƏNİN ÖZÜNÜN LAZIM OLAN İKİ SAHƏSİNƏ ÇEVİRİR: `items` (ARTIQ `Product[]`-Ə ÇEVRİLMİŞ, `mapProductFromApi` İLƏ) VƏ `total` (`pagination.total` — CƏMİ NEÇƏ MƏHSUL OLDUĞU, HƏTTA CƏDVƏLDƏ BUNLARIN YALNIZ BİR HİSSƏSİ GÖRÜNSƏ DƏ). `search: search || undefined` — BOŞ STRİNG (`''`) YERİNƏ `undefined` GÖNDƏRİR, ÇÜNKİ AXIOS `undefined` DƏYƏRLİ SAHƏLƏRİ URL-DƏN TAMAMİLƏ ATIR (`search=` DEYİL, HEÇ NƏ) — AXTARIŞ BOŞDURSA, BACKEND-Ə HEÇ `search` PARAMETRİ GETMİR.
+8. **`return { loading, paged: data?.items ?? [], total: data?.total ?? 0, page, setPage, pageSize, categoryOptions }`** — `data?.items ?? []` — Hissə 3-DƏKİ OPTIONAL CHAINING + NULLİSH COALESCING: `useQuery`-NİN `data`-SI SORĞU HƏLƏ BİTMƏYİBSƏ `undefined`-DIR, ONA GÖRƏ `data?.items` (VAR OLSA `items`-i, YOXSA `undefined`-İ QAYTAR) + `?? []` (O DA `undefined`-DİRSƏ, BOŞ MASSİV VER) — CƏDVƏL HEÇ VAXT "`undefined`-İ MAP ETMƏYƏ ÇALIŞ" XƏTASI ALMIR.
+
+`index.tsx`-DƏ İSTİFADƏSİ, ARTIQ `filtered.length` YOX, BACKEND-İN ÖZÜNÜN QAYTARDIĞI `total`-LA:
+```tsx
+const { loading, total, page, setPage, pageSize, paged, categoryOptions } = useProductsData(search)
+// ...
+<ProductsPagination page={page} pageSize={pageSize} total={total} onPageChange={setPage} />
+```
+`ProductsPagination`/`Pagination.tsx` (Hissə 16) KOMPONENTİN ÖZÜ HEÇ DƏYİŞMƏYİB — O, HƏMİŞƏ `page`/`pageSize`/`total`/`onPageChange` PROP-LARINI GÖZLƏYİR, HARADAN GƏLDİYİ (`usePagination`-DAN, YA DA BİRBAŞA BACKEND-DƏN) ONUN ÜÇÜN FƏRQ ETMİR — BU DA, "KOMPONENT ÖZ MƏNBƏYİNDƏN ASILI OLMAMALIDIR" PRİNSİPİNƏ GÖZƏL BİR MİSALDIR.
 
 ### `src/pages/Protected/Orders/` — FƏRQLİ NÜMUNƏ, ARTIQ tanstack-table ÜZƏRİNDƏ QURULUB
 
