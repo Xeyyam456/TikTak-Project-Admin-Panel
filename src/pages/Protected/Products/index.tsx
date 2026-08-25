@@ -17,7 +17,7 @@ export default function Products() {
   useTitle('Məhsullar')
   const { search } = useOutletContext<LayoutOutletContext>()
 
-  const { loading, filtered, page, setPage, pageSize, paged, categoryOptions } = useProductsData(search)
+  const { loading, total, page, setPage, pageSize, paged, categoryOptions } = useProductsData(search)
   const {
     formOpen,
     setFormOpen,
@@ -55,7 +55,7 @@ export default function Products() {
         onDelete={setDeleteTarget}
       />
 
-      <ProductsPagination page={page} pageSize={pageSize} total={filtered.length} onPageChange={setPage} />
+      <ProductsPagination page={page} pageSize={pageSize} total={total} onPageChange={setPage} />
 
       <ProductForm
         open={formOpen}

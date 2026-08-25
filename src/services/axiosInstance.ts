@@ -21,7 +21,19 @@ api.interceptors.request.use((config) => {
 // at runtime this unwraps the `{data}` envelope to the raw payload. The real
 // public contract callers see is `UnwrappedApi` (the `as unknown as UnwrappedApi`
 // cast on the default export below), not this function's nominal return type.
-const handleSuccess = (response: AxiosResponse) => (response.data.data ?? response.data) as AxiosResponse
+// A list endpoint that actually paginates server-side (currently only
+// `/admin/products` with `?limit&page`) sends `pagination` as a sibling of
+// `data`, not nested inside it — the plain `data ?? body` unwrap below would
+// silently drop that metadata, so it's preserved as `{ data, pagination }`
+// whenever the body carries it; every other endpoint has no `pagination` key
+// and is unaffected.
+const handleSuccess = (response: AxiosResponse) => {
+  const body = response.data
+  if (body && typeof body === 'object' && 'pagination' in body) {
+    return { data: body.data, pagination: body.pagination } as unknown as AxiosResponse
+  }
+  return (body.data ?? body) as AxiosResponse
+}
 
 const STATUS_MESSAGES: Record<number, string> = {
   400: 'Məlumatlar düzgün deyil',

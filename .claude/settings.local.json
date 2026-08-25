@@ -1,0 +1,18 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(cat index.html)",
+      "Bash(cat vite.config.ts)",
+      "Bash(cat tsconfig.json)",
+      "Bash(cat tsconfig.app.json)",
+      "Bash(cat package.json)",
+      "Read(//d/Praqramlasdirma/Homeworks/tiktak-project/**)",
+      "Bash(find . -maxdepth 3 -iname \"app\" -type d)",
+      "Bash(npm run *)",
+      "Bash(powershell -Command \"Get-Command chromium-cli -ErrorAction SilentlyContinue\")",
+      "Bash(npx --yes playwright --version)",
+      "Bash(npx --yes playwright install chromium --with-deps)",
+      "Skill(run)"
+    ]
+  }
+}
