@@ -13,7 +13,7 @@ export default function OrderProductRow({ item, index }: OrderProductRowProps) {
           {item.category} · {item.weight}
         </div>
       </div>
-      <div className={`flex flex-col items-end gap-1 ${styles.productPriceWrap}`}>
+      <div className={`flex items-center gap-2 ${styles.productPriceWrap}`}>
         <span className={styles.pricePill}>{item.price} ₼</span>
         <span className={styles.productUnit}>{item.unit}</span>
       </div>
