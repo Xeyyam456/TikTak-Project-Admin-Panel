@@ -6,10 +6,15 @@
 
 .title {
   justify-self: start;
-  font-size: 20px;
+  font-size: 26px;
   font-weight: 700;
   letter-spacing: -0.02em;
   color: var(--color-text-strong);
+}
+
+/* TAK yaşıl; TIK və ADMIN mövzuya uyğun əsas mətn rəngində qalır. */
+.titleAccent {
+  color: var(--color-green-dark);
 }
 
 .searchWrap {

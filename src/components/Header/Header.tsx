@@ -9,7 +9,9 @@ export default function Header({ search, onSearchChange }: HeaderProps) {
 
   return (
     <header className={`gap-4 ${styles.header}`}>
-      <h1 className={`whitespace-nowrap ${styles.title}`}>TIK TAK ADMIN</h1>
+      <h1 className={`whitespace-nowrap ${styles.title}`}>
+        TIK<span className={styles.titleAccent}>TAK</span>
+      </h1>
       <div className={styles.searchWrap}>
         <Search className={styles.searchIcon} size={16} />
         <input
