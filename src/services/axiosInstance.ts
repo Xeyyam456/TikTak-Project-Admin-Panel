@@ -8,6 +8,9 @@ const BASE_URL = `${import.meta.env.VITE_API_BASE_URL}/api/tiktak`
 
 const api = axios.create({
   baseURL: BASE_URL,
+  // Cavab verməyən server sonsuza qədər gözlənilməsin — timeout-da error.response olmur,
+  // yəni getErrorMessage "Serverə qoşulmaq mümkün olmadı" qaytarır
+  timeout: 30000,
   headers: { 'Accept-Language': 'az' },
 })
 
@@ -42,6 +45,10 @@ const STATUS_MESSAGES: Record<number, string> = {
   409: 'Bu məlumat artıq mövcuddur',
   422: 'Məlumatlar düzgün deyil',
   500: 'Server xətası baş verdi',
+  // Server söndürülüb / əlçatmazdır (proxy və ya hosting səviyyəsində) — şəbəkə xətası ilə eyni mesaj
+  502: 'Serverə qoşulmaq mümkün olmadı',
+  503: 'Serverə qoşulmaq mümkün olmadı',
+  504: 'Serverə qoşulmaq mümkün olmadı',
 }
 
 // Backend mesajları ingiliscə gəlir — onları göstərmək əvəzinə status koduna
