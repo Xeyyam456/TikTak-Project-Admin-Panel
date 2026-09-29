@@ -2955,7 +2955,9 @@ export default function Header({ search, onSearchChange }: HeaderProps) {
 
   return (
     <header className={`gap-4 ${styles.header}`}>
-      <h1 className={`whitespace-nowrap ${styles.title}`}>TIK TAK ADMIN</h1>
+      <h1 className={`whitespace-nowrap ${styles.title}`}>
+        TIK<span className={styles.titleAccent}>TAK</span>
+      </h1>
       <div className={styles.searchWrap}>
         <Search size={16} />
         <input value={search} onChange={(e) => onSearchChange?.(e.target.value)} className={styles.searchInput} />
@@ -3672,7 +3674,7 @@ export default function OrderDetails({ order, onClose, onStatusChange }: OrderDe
   )
 }
 ```
-- **`wide className={styles.wideModal}`** — `Modal.tsx`-in yeni `className` prop-u (yuxarıda, `Modal.tsx` bölməsinə baxın) BURADA İŞLƏDİLİR — Orders-in modalı `.wideModal { max-width: 660px }` İLƏ DİGƏR BÜTÜN `wide` MODALLARDAN (560px) GENİŞDİR, AMMA PAYLAŞILAN `.cardWide` SİNİFİNƏ TOXUNULMADAN.
+- **`wide className={styles.wideModal}`** — `Modal.tsx`-in yeni `className` prop-u (yuxarıda, `Modal.tsx` bölməsinə baxın) BURADA İŞLƏDİLİR — Orders-in modalı `.wideModal { max-width: 920px }` İLƏ DİGƏR BÜTÜN `wide` MODALLARDAN (560px) GENİŞDİR (660px İDİ, İSTƏYƏ GÖRƏ 920px-Ə ARTIRILDI), AMMA PAYLAŞILAN `.cardWide` SİNİFİNƏ TOXUNULMADAN.
 - **DÖRD DƏFƏ TƏKRARLANAN `<OrderInfoRow icon={...} color={...} label="..." value={...} />`** — Hissə 2-DƏ İZAH OLUNAN "TƏKRARLANAN KODU BİR KOMPONENTƏ ÇIXAR" PRİNSİPİNİN KONKRET MİSALIDIR: köhnə versiyada bu 4 sətir, HƏR BİRİ 8-9 SƏTİRLİK, TAM EYNİ FORMALI (ikon+etiket+dəyər) JSX BLOKU İDİ — indi tək bir `OrderInfoRow` komponenti 4 DƏFƏ FƏRQLİ PROP-LARLA ÇAĞIRILIR.
 - **`Çatdırılma Ünvanı` TƏK BAŞINA, QALAN ÜÇÜ (`Tarix`/`Telefon`/`Ödəmə Metodu`) İSƏ `.infoGrid` (3 SÜTUNLU GRID) İÇİNDƏ** — ÜNVAN ADƏTƏN UZUN MƏTN OLDUĞU ÜÇÜN ÖZ TAM-EN SƏTRİNDƏ QALIR, QALAN ÜÇÜ İSƏ QISA OLDUĞU ÜÇÜN YAN-YANA SIĞIR — BU, MODALIN HÜNDÜRLÜYÜNÜ AZALDAN, EKRANA "SIĞMAMA" PROBLEMİNİ HƏLL EDƏN KONKRET DÜZƏLİŞDİR (`Modal.tsx`-in ÖZÜNDƏ ARTIQ SCROLL DA VAR, AMMA DAHA QISA MODAL HƏR ZAMAN YAXŞIDIR).
 
@@ -3738,6 +3740,7 @@ const ACCENT_CLASS: Record<OrderInfoRowColor, string> = {
 ```
   BU, "RƏNG-SEÇİM MƏNTİQİ HARADA YAŞAMALIDIR?" SUALINA VERİLƏN BİR CAVABDIR — LAYİHƏDƏ ARTIQ BÜTÜN RƏNG/TEMA MƏNTİQİ (design token-lar, qaranlıq rejim, Hissə 17-yə baxın) CSS-DƏ YAŞAYIR, ONA GÖRƏ BU KOMPONENTİN DƏ EYNİ FƏLSƏFƏYƏ UYĞUNLAŞDIRILMASI MƏNTİQLİ SAYILDI.
 - **`OrderInfoRowColor`** (`types/order/OrderInfoRowProps.ts`) — `'blue' | 'amber' | 'purple' | 'green'` (Hissə 3-DƏKİ UNION TİP) — `OrderInfoRow`-un `color` PROP-UNUN TİPİDİR, JSX-DƏ `data-color={color}` KİMİ BİRBAŞA STRİNG OLARAQ RENDER OLUNUR.
+- **DİQQƏT — YENİLƏMƏ:** MODAL RƏNGSİZ DİZAYNA KEÇƏNDƏN SONRA `.detailRow[data-color='blue'|'amber'|'purple'|'green']` QAYDALARI CSS-DƏN SİLİNDİ; İNDİ BÜTÜN İKONLAR EYNİ NEYTRAL BOZ TONDADIR. `data-color` ATRİBUTU VƏ `color` PROP-U KOMPONENTDƏ QALIB (GƏLƏCƏKDƏ RƏNGLİ VARİANT YALNIZ CSS İLƏ GERİ QAYTARILA BİLSİN DEYƏ), AMMA HAZIRDA STİLƏ TƏSİR ETMİR — YUXARIDAKI CSS NÜMUNƏSİ TARİXİ İZAHDIR.
 
 **`OrderProductsSection.tsx` — "Məhsullar (N)" başlığı + siyahı + çatdırılma qeydi:**
 ```tsx
@@ -3771,7 +3774,7 @@ export default function OrderProductRow({ item, index }: OrderProductRowProps) {
         <div className={styles.productName}>{item.name}</div>
         <div className={styles.productMeta}>{item.category} · {item.weight}</div>
       </div>
-      <div className={`flex flex-col items-end gap-1 ${styles.productPriceWrap}`}>
+      <div className={`flex items-center gap-2 ${styles.productPriceWrap}`}>
         <span className={styles.pricePill}>{item.price} ₼</span>
         <span className={styles.productUnit}>{item.unit}</span>
       </div>
@@ -3780,22 +3783,26 @@ export default function OrderProductRow({ item, index }: OrderProductRowProps) {
 }
 ```
 - **`index` PROP-U SONRADAN ƏLAVƏ OLUNUB** (`OrderProductRowProps`-A) — `{index + 1}` İLƏ HƏR MƏHSULUN YANINDA KİÇİK BİR NÖMRƏLƏNMİŞ DAİRƏ (`.productIndex`) GÖSTƏRİLİR.
-- **QİYMƏT ARTIQ SADƏ MƏTN DEYİL, `.pricePill`** — YAŞIL, "HƏB FORMALI" (pill) BİR BADGE-DİR (`border-radius: 999px`), ADİ MƏTNDƏN DAHA DİQQƏT ÇƏKİR.
-- **CSS-DƏ MARAQLI BİR HİSSƏ — `.productRow:nth-child(3n+2)`/`:nth-child(3n+3)`**: HƏR KARTIN SOL TƏRƏFİNDƏ BİR AKSENT ZOLAĞI (`border-left`) VAR, VƏ BU RƏNG 3 RƏNG (YAŞIL/MAVİ/BƏNÖVŞƏYİ) ARASINDA `:nth-child` (Hissə 2-də GEÇMƏYƏN, AMMA CSS-İN ÖZ "N-Cİ UŞAQ" SEÇİCİSİ) İLƏ DÖVR EDİR — SİFARİŞDƏ ÇOX MƏHSUL VARSA, SİYAHI MONOTON GÖRÜNMƏSİN DEYƏ.
-- **HOVER QAYDASINDA BİR "TƏLƏ" VAR, DİQQƏTLİ OLUN:** `.productRow:hover` `border-color` SHORTHAND-INI YOX, `border-top-color`/`border-right-color`/`border-bottom-color`-U AYRI-AYRI İŞLƏDİR — ÇÜNKİ `border-color` SHORTHAND-I DÖRD TƏRƏFİN DƏ RƏNGİNİ EYNİ ANDA TƏYİN EDİR, VƏ ÜZƏRİNƏ GƏLƏNDƏ SOL TƏRƏFDƏKİ (YUXARIDA İZAH OLUNAN) AKSENT RƏNGİNİ DƏ BOZA ÇEVİRƏRDİ — BU, ARDINCA TAPILIB DÜZƏLDİLƏN, REAL BİR BUQ İDİ.
+- **QİYMƏT ARTIQ SADƏ MƏTN DEYİL, `.pricePill`** — "HƏB FORMALI" (pill) BİR BADGE-DİR (`border-radius: 999px`), ADİ MƏTNDƏN DAHA DİQQƏT ÇƏKİR. VAHİD (`Kiloqram`/`Ədəd`) ARTIQ QİYMƏTİN ALTINDA YOX, YANINDA (EYNİ SƏTİRDƏ, `flex items-center gap-2`) GÖSTƏRİLİR — ALT-ALTA OLANDA HƏR SƏTİR HÜNDÜR OLURDU.
+- **MODAL ARTIQ RƏNGSİZDİR (SONRADAN DƏYİŞDİRİLİB):** KARTLARIN SOL TƏRƏFİNDƏKİ RƏNGARƏNG AKSENT ZOLAQLARI (`:nth-child(3n+2)`/`(3n+3)` İLƏ YAŞIL/MAVİ/BƏNÖVŞƏYİ DÖVR EDƏN), YAŞIL `.pricePill` VƏ YAŞIL QRADİYENTLİ "HERO" KART İSTƏYƏ GÖRƏ ÇIXARILDI — İNDİ HAMISI NEYTRAL BOZ TONLARDADIR. YALNIZ **STATUSA BAĞLI HİSSƏLƏR** (STATUS DAİRƏSİ VƏ DROPDOWN-UN YAZISI/ÇƏRÇİVƏSİ) SEÇİLMİŞ STATUSUN RƏNGİNİ ALIR. `:hover`-DƏ ARTIQ `border-color` SHORTHAND-I RAHAT İŞLƏDİLİR, ÇÜNKİ QORUNACAQ SOL AKSENT RƏNGİ QALMAYIB.
+- **2 SÜTUNLU DÜZÜLÜŞ:** `.productsCard` ARTIQ `display: grid; grid-template-columns: repeat(2, minmax(0, 1fr))`-DİR (720px-DƏN DAR EKRANDA TƏK SÜTUN). TƏK SAYDA MƏHSULDA SONUNCU TƏK QALAN KART `:last-child:nth-child(odd) { grid-column: 1 / -1 }` İLƏ TAM EN TUTUR (1 MƏHSUL OLANDA DA EYNİ QAYDA İŞLƏYİR). SİYAHI `max-height: 290px; overflow-y: auto` İLƏ DAXİLİ SKROLLUDUR — MODAL MƏHSUL SAYINA GÖRƏ UZANMIR, SKROL YALNIZ MƏHSULLAR HİSSƏSİNDƏDİR (SKROL BARI GİZLİDİR).
 
 ```tsx
 // OrderStatusSelect.tsx
 export default function OrderStatusSelect({ orderId, status, onStatusChange }: OrderStatusSelectProps) {
   return (
-    <select value={status} onChange={(e) => onStatusChange(orderId, e.target.value as OrderStatus)}
-      style={{ color: STATUS_TEXT_COLOR[ORDER_STATUS_BADGE_COLOR[status]] }}>
-      {ORDER_STATUS_OPTIONS.map((s) => <option key={s} value={s}>{ORDER_STATUS_LABELS[s]}</option>)}
-    </select>
+    <div className={styles.statusDropdown} style={{ color: STATUS_TEXT_COLOR[ORDER_STATUS_BADGE_COLOR[status]] }}>
+      <FormDropdown
+        value={status}
+        onChange={(value) => onStatusChange(orderId, value as OrderStatus)}
+        options={STATUS_DROPDOWN_OPTIONS}
+      />
+    </div>
   )
 }
 ```
-- `e.target.value as OrderStatus` — Hissə 3-dəki `as`-a baxın: dropdown `ORDER_STATUS_OPTIONS`-dan quruluduğu üçün TƏHLÜKƏSİZDİR.
+- **ARTIQ NATIVE `<select>` DEYİL, PAYLAŞILAN `FormDropdown`-DUR** (Products-un edit modalındakı `Növ`/`Kateqoriya` DROPDOWN-LARI İLƏ EYNİ KOMPONENT) — BELƏLİKLƏ GÖRÜNÜŞ EYNİ OLUR. NATIVE `<option>` POPUP-LARI OS TƏRƏFİNDƏN RENDER OLUNDUĞUNDAN RƏNGİ/DARK MODE-U DÜZGÜN QƏBUL ETMİRDİ, BU PROBLEM DƏ BELƏLİKLƏ YOX OLDU. `FormDropdown`-UN RƏNG PROP-U YOXDUR: STATUS RƏNGİ WRAPPER `div`-İN `color`-UNDAN GƏLİR, CSS İSƏ (`.statusDropdown button { color: inherit; border-color: currentColor }`) TRIGGER-İN ONU MİRAS ALMASINI TƏMİN EDİR. AÇILAN SİYAHIDAKI SEÇİMLƏR AYRICA RƏNGLƏNMİR (MƏHDUDİYYƏT).
+- `value as OrderStatus` — `FormDropdown` `onChange`-DA ADİ `string` QAYTARIR; `options` `ORDER_STATUS_OPTIONS`-DAN QURULDUĞU ÜÇÜN `as` TƏHLÜKƏSİZDİR (Hissə 3-dəki `as`-a baxın).
 - **`STATUS_TEXT_COLOR[ORDER_STATUS_BADGE_COLOR[status]]`** — İKİ QAT LOOKUP: ƏVVƏLCƏ `status` (`"PENDING"`) → `ORDER_STATUS_BADGE_COLOR`-DAN BİR `BadgeColor` (`"amber"`) TAPILIR, SONRA O `BadgeColor` → `constants/statusTextColor.ts`-DƏKİ `STATUS_TEXT_COLOR`-DAN BİR HƏQİQİ CSS RƏNGİ (`var(--color-amber-text)`) TAPILIR. **NİYƏ BİR ADDIMDA YOX?** ÇÜNKİ `"amber"` KİMİ DƏYƏRLƏR **HƏQİQİ CSS RƏNG ADI DEYİL** (`BadgeColor` — Badge komponentinin ÖZ DAXİLİ "KATEQORİYA ADLARIDIR"), ONA GÖRƏ `style={{ color: 'amber' }}` YAZSAQ BRAUZER BUNU TANIMAZ — `STATUS_TEXT_COLOR: Record<BadgeColor, string>` BU İKİSİ ARASINDA "TƏRCÜMƏÇİ" ROLUNU OYNAYIR.
 
 ### Cədvəl başlıqlarında sıralama + filtrasiya — tanstack-table-A KEÇİD
@@ -3961,7 +3968,8 @@ export function buildColumnMeta(headers: Header<Order, unknown>[]): Column[] {
 
 **`table/components/ColumnHeader.tsx` — checkbox-siyahı filtri, Radix DropdownMenu ilə:**
 ```tsx
-export function ColumnHeader<T extends string>({ label, options, getOptionLabel = (option) => option, value, onChange, sortDir, onSortClick, centered }: ColumnHeaderProps<T>) {
+// `single` — radio davranışı (yalnız `Subtotal/Çatdırılma` üçün): eyni anda bir seçim, seçilmişə yenidən klik = təmizlə
+export function ColumnHeader<T extends string>({ label, options, getOptionLabel = (option) => option, value, onChange, sortDir, onSortClick, centered, single }: ColumnHeaderProps<T>) {
   const [search, setSearch] = useState('')
   const filteredOptions = options.filter((option) => getOptionLabel(option).toLocaleLowerCase('az').includes(search.toLocaleLowerCase('az')))
   const toggle = (option: T) => {
