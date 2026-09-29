@@ -15,6 +15,19 @@
   min-height: 320px;
 }
 
+/* Sol tərəf qaranlıq rejimdə də işıqlı rejimdəki kimi qalır (ağ fon, tünd
+   yazı) — illüstrasiya ağ fon üçün çəkilib, alt yazısı və tünd hissələri
+   tünd fonda oxunmur. Literal rənglər: bu səthlər mövzu token-ləri ilə
+   dəyişməməlidir. */
+:root[data-theme='dark'] .left {
+  background: #ffffff;
+  border-right-color: #e5e7eb;
+}
+
+:root[data-theme='dark'] .left .brand {
+  color: #1f2937;
+}
+
 @media (min-width: 768px) {
   .left {
     border-right: 2px solid var(--color-border-strong);
@@ -23,10 +36,19 @@
 
 .brand {
   padding: 40px 0 0 40px;
-  font-size: 24px;
+  font-size: 32px;
   font-weight: 800;
   letter-spacing: -0.02em;
   color: var(--color-text-strong);
+}
+
+/* Sol tərəf hər iki rejimdə ağ olduğu üçün literal rənglər (token yox). */
+.brandTik {
+  color: #1f2937;
+}
+
+.brandTak {
+  color: #6bb565;
 }
 
 @media (min-width: 640px) {
@@ -38,7 +60,7 @@
 .illustrationWrap {
   flex: 1;
   min-height: 0;
-  padding: 0 60px 150px;
+  padding: 70px 60px 80px;
 }
 
 .illustration {

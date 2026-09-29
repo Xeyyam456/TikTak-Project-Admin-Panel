@@ -8,7 +8,10 @@ export default function Login() {
   return (
     <div className={`overflow-hidden ${styles.page}`}>
       <div className={`flex flex-col ${styles.left}`}>
-        <h1 className={styles.brand}>TIK TAK ADMİN</h1>
+        <h1 className={styles.brand}>
+          <span className={styles.brandTik}>TIK</span>
+          <span className={styles.brandTak}>TAK</span>
+        </h1>
         <div className={`flex items-center justify-center ${styles.illustrationWrap}`}>
           <img src={loginImg} alt="" className={styles.illustration} />
         </div>
