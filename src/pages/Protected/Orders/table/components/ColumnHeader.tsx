@@ -15,6 +15,7 @@ export function ColumnHeader<T extends string>({
   sortDir,
   onSortClick,
   centered,
+  single,
 }: ColumnHeaderProps<T>) {
 
   const [search, setSearch] = useState('')
@@ -23,8 +24,10 @@ export function ColumnHeader<T extends string>({
   )
 
   const toggle = (option: T) => {
-    const next = new Set(value)
-    if (next.has(option)) next.delete(option)
+    const next = single ? new Set<T>() : new Set(value)
+    if (single && !value.has(option)) next.add(option)
+    else if (single) next.clear()
+    else if (next.has(option)) next.delete(option)
     else next.add(option)
     onChange(next)
   }
@@ -70,8 +73,10 @@ export function ColumnHeader<T extends string>({
                   onSelect={(e) => e.preventDefault()}
                   className={`flex items-center gap-2 cursor-pointer ${styles.filterItem}`}
                 >
-                  <span className={`flex items-center justify-center ${styles.checkbox} ${value.has(option) ? styles.checkboxChecked : ''}`}>
-                    {value.has(option) && <Check size={11} strokeWidth={3} />}
+                  <span
+                    className={`flex items-center justify-center ${styles.checkbox} ${single ? styles.radio : ''} ${value.has(option) ? styles.checkboxChecked : ''}`}
+                  >
+                    {value.has(option) && (single ? <span className={styles.radioDot} /> : <Check size={11} strokeWidth={3} />)}
                   </span>
                   <span className="truncate">{getOptionLabel(option)}</span>
                 </DropdownMenu.CheckboxItem>

@@ -125,6 +125,19 @@
   background: var(--color-blue-text);
 }
 
+/* Radio variantı (`single`) — yuvarlaq indikator + içində ağ nöqtə. */
+.radio {
+  border-radius: 999px;
+}
+
+.radioDot {
+  height: 6px;
+  width: 6px;
+  border-radius: 999px;
+  /* Literal white — same reason as .checkbox's color above. */
+  background: #ffffff;
+}
+
 .filterEmpty {
   padding: 8px 10px;
   font-size: 13px;

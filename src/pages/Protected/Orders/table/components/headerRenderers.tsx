@@ -44,6 +44,7 @@ export const subtotalHeader = (
   <ColumnHeader
     label="Subtotal/Çatdırılma"
     options={SHIPPING_BUCKETS}
+    single
     value={value}
     onChange={onChange}
     sortDir={sort?.key === 'subtotal' ? sort.dir : null}

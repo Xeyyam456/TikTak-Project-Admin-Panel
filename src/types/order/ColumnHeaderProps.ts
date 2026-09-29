@@ -12,4 +12,8 @@ export interface ColumnHeaderProps<T extends string> {
   // component's root `<span>` (a block-level flex container, unaffected by
   // an ancestor's text-align).
   centered?: boolean
+  // Radio davranışı: eyni anda yalnız bir seçim (seçilmişə yenidən klik
+  // filtri təmizləyir). `Subtotal/Çatdırılma` üçün — Pulsuz/Ödənişli bir-birini
+  // istisna edir, ikisini birdən seçmək mənasızdır.
+  single?: boolean
 }
