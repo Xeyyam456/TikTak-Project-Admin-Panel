@@ -20,7 +20,7 @@ export default function CategoryForm({ open, onClose, editing, defaultValues, su
   }, [open, defaultValues, reset])
 
   return (
-    <Modal open={open} onClose={onClose}>
+    <Modal open={open} onClose={onClose} className={styles.modal}>
       <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col gap-4">
         <ImageUploadField value={watch('imageUrl')} onChange={(url) => setValue('imageUrl', url, { shouldDirty: true })} />
         <FormField label="Ad">
